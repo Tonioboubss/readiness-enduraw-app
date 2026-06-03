@@ -3,7 +3,8 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import HomeScreen from "./screens/HomeScreen";
-import CheckInScreen from "./screens/CheckInScreen";
+import CheckInScreen1 from "./screens/CheckInScreen1";
+import CheckInScreen2 from "./screens/CheckInScreen2";
 import CheckOutScreen from "./screens/CheckOutScreen";
 import DailyPrintScreen from "./screens/DailyPrintScreen";
 import HistoryScreen from "./screens/HistoryScreen";
@@ -22,7 +23,8 @@ export default function App() {
         }}
       >
         <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="CheckIn" component={CheckInScreen} />
+        <Stack.Screen name="CheckIn1" component={CheckInScreen1} />
+        <Stack.Screen name="CheckIn2" component={CheckInScreen2} />
         <Stack.Screen name="CheckOut" component={CheckOutScreen} />
         <Stack.Screen name="DailyPrint" component={DailyPrintScreen} />
         <Stack.Screen name="History" component={HistoryScreen} />

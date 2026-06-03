@@ -5,7 +5,7 @@ import Svg, { Polygon, Path, Circle, Text as SvgText, } from "react-native-svg";
 import { COLORS, RADIUS } from "../constants/theme";
 import ProgressSteps from "../components/ProgressSteps";
 
-export default function CheckInScreen({ navigation }) {
+export default function CheckInScreen1({ navigation }) {
   const [energy, setEnergy] = useState(72);
   const [mental, setMental] = useState(66);
   const [confidence, setConfidence] = useState(73);
@@ -44,23 +44,23 @@ export default function CheckInScreen({ navigation }) {
         </Text>
       </View>
 
-      <TouchableOpacity
-        style={styles.primaryButton}
-        onPress={() =>
-          navigation.navigate("DailyPrint", {
-            score,
-            energy,
-            mental,
-            confidence,
-          })
-        }
-      >
-        <Text style={styles.primaryButtonText}>GENERATE MY DAILY PRINT →</Text>
-      </TouchableOpacity>
+      <View style={styles.buttonRow}>
+  <TouchableOpacity
+    style={styles.cancelButton}
+    onPress={() => navigation.goBack()}
+  >
+    <Text style={styles.cancelButtonText}>Cancel</Text>
+  </TouchableOpacity>
 
-      <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.navigate("Home")}>
-        <Text style={styles.cancelText}>CANCEL</Text>
-      </TouchableOpacity>
+  <TouchableOpacity
+    style={styles.continueButton}
+    onPress={() => navigation.navigate("CheckIn2")}
+  >
+    <Text style={styles.continueButtonText}>
+      Continue Morning Check-In
+    </Text>
+  </TouchableOpacity>
+</View>
     </View>
   );
 }
@@ -93,7 +93,7 @@ function EnergyCard({ energy, setEnergy }) {
       
         return (
           <View style={styles.verticalCard}>
-            <Text style={styles.cardTitleSmall}>1. ENERGY</Text>
+            <Text style={styles.cardTitleSmall}>1. ENERGY LEVEL</Text>
             <Text style={styles.questionSmall}>How much Energy in store ?</Text>
       
             <View style={styles.energySliderZone} {...panResponder.panHandlers}>
@@ -179,7 +179,7 @@ function EnergyCard({ energy, setEnergy }) {
       
         return (
           <View style={styles.verticalCard}>
-            <Text style={styles.cardTitleSmall}>2. MENTAL</Text>
+            <Text style={styles.cardTitleSmall}>2. MENTAL AVAILABILITY</Text>
             <Text style={styles.questionSmall}>Where is your attention today?</Text>
       
             <Text style={styles.mentalWord}>{getMentalWord(mental)}</Text>
@@ -587,21 +587,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  cancelButton: {
-    borderRadius: 18,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-
-  cancelText: {
-    color: COLORS.text,
-    textAlign: "center",
-    fontWeight: "900",
-    fontSize: 14,
-    letterSpacing: 1,
-  },
-
   sliderTouchZone: {
         width: 70,
         height: 150,
@@ -716,5 +701,49 @@ const styles = StyleSheet.create({
         letterSpacing: 0.8,
         textAlign: "center",
         marginTop: 8,
+      },
+
+      continueButton: {
+        flex: 1,
+        height: 54,
+        borderRadius: 18,
+        backgroundColor: "#FF8500",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 12,
+      },
+      
+      continueButtonText: {
+        color: "#031018",
+        fontSize: 13,
+        fontWeight: "900",
+        textTransform: "uppercase",
+        textAlign: "center",
+      },
+
+      cancelButton: {
+        width: 110,
+        height: 54,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.25)",
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      
+      cancelButtonText: {
+        color: "#F5F5F5",
+        fontSize: 14,
+        fontWeight: "800",
+        textAlign: "center",
+      },
+
+      buttonRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        marginTop: 24,
+        marginBottom: 40,
       },
 });

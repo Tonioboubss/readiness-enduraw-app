@@ -20,7 +20,7 @@ export default function HomeScreen({ navigation }) {
 
         <TouchableOpacity
           style={styles.primaryButton}
-          onPress={() => navigation.navigate("CheckIn")}
+          onPress={() => navigation.navigate("CheckIn1")}
         >
           <Text style={styles.primaryButtonText}>Start Morning check-in</Text>
         </TouchableOpacity>

@@ -117,19 +117,44 @@ function EnergyCard({ energy, setEnergy }) {
       }
 
       function MentalCard({ mental, setMental }) {
-        const sliderHeight = 135;
+        const targetSize = 155;
+        const center = targetSize / 2;
+        const maxRadius = 65;
+      
+        const [markerPosition, setMarkerPosition] = useState({
+          x: center,
+          y: center - ((100 - mental) / 100) * maxRadius,
+        });
       
         const getMentalWord = (value) => {
-          if (value < 20) return "OVERLOADED";
-          if (value < 40) return "SCATTERED";
-          if (value < 60) return "NEUTRAL";
-          if (value < 80) return "AVAILABLE";
-          return "FOCUSED";
+          if (value >= 80) return "FOCUSED";
+          if (value >= 60) return "AVAILABLE";
+          if (value >= 40) return "NEUTRAL";
+          if (value >= 20) return "SCATTERED";
+          return "OVERLOADED";
         };
       
-        const updateMental = (y) => {
-          const clampedY = Math.max(0, Math.min(y, sliderHeight));
-          const newValue = Math.round(100 - (clampedY / sliderHeight) * 100);
+        const updateMentalFromTouch = (x, y) => {
+          const dx = x - center;
+          const dy = y - center;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+      
+          const clampedDistance = Math.min(distance, maxRadius);
+          const angle = Math.atan2(dy, dx);
+      
+          const markerX = center + Math.cos(angle) * clampedDistance;
+          const markerY = center + Math.sin(angle) * clampedDistance;
+      
+          let newValue = Math.round(100 - (clampedDistance / maxRadius) * 100);
+      
+          if (newValue >= 95) newValue = 100;
+          if (newValue <= 5) newValue = 0;
+      
+          setMarkerPosition({
+            x: markerX,
+            y: markerY,
+          });
+      
           setMental(newValue);
         };
       
@@ -138,44 +163,90 @@ function EnergyCard({ energy, setEnergy }) {
             onStartShouldSetPanResponder: () => true,
             onMoveShouldSetPanResponder: () => true,
             onPanResponderGrant: (event) => {
-              updateMental(event.nativeEvent.locationY);
+              updateMentalFromTouch(
+                event.nativeEvent.locationX,
+                event.nativeEvent.locationY
+              );
             },
             onPanResponderMove: (event) => {
-              updateMental(event.nativeEvent.locationY);
+              updateMentalFromTouch(
+                event.nativeEvent.locationX,
+                event.nativeEvent.locationY
+              );
             },
           })
         ).current;
       
         return (
           <View style={styles.verticalCard}>
-            <Text style={styles.cardTitleSmall}>2. MENTAL AVAILABILITY</Text>
-            <Text style={styles.questionSmall}>How clear is your mind ? </Text>
+            <Text style={styles.cardTitleSmall}>2. MENTAL</Text>
+            <Text style={styles.questionSmall}>Where is your attention today?</Text>
       
             <Text style={styles.mentalWord}>{getMentalWord(mental)}</Text>
       
-            <View style={styles.mentalGaugeContainer}>
-            <View style={styles.sliderTouchZone} {...panResponder.panHandlers}>
-  <View style={styles.verticalSlider}>
-    <View style={[styles.verticalFill, { height: `${mental}%` }]} />
-
-    <View
-      style={[
-        styles.verticalThumb,
-        { bottom: `${Math.max(0, Math.min(mental, 92))}%` },
-      ]}
-    />
-
-    <Text
-      style={[
-        styles.mentalPercentFloating,
-        { bottom: `${Math.max(0, Math.min(mental, 92))}%` },
-      ]}
-    >
-      {Math.round(mental)}%
-    </Text>
-  </View>
-</View>
-          </View>
+            <View style={styles.targetZone} {...panResponder.panHandlers}>
+              <Svg
+                width={targetSize}
+                height={targetSize}
+                viewBox={`0 0 ${targetSize} ${targetSize}`}
+              >
+                {[65, 52, 39, 26, 13].map((radius) => (
+                  <Circle
+                    key={radius}
+                    cx={center}
+                    cy={center}
+                    r={radius}
+                    fill="none"
+                    stroke="rgba(255,255,255,0.22)"
+                    strokeWidth="1.5"
+                  />
+                ))}
+      
+                <Path
+                  d={`M${center} 8 L${center} ${targetSize - 8}`}
+                  stroke="rgba(255,255,255,0.18)"
+                  strokeWidth="1"
+                  strokeDasharray="4 5"
+                />
+      
+                <Path
+                  d={`M8 ${center} L${targetSize - 8} ${center}`}
+                  stroke="rgba(255,255,255,0.18)"
+                  strokeWidth="1"
+                  strokeDasharray="4 5"
+                />
+      
+                <Circle cx={center} cy={center} r="16" fill="#FF7A00" opacity="0.22" />
+                <Circle cx={center} cy={center} r="7" fill="#FF7A00" opacity="0.95" />
+      
+                <Circle
+                  cx={markerPosition.x}
+                  cy={markerPosition.y}
+                  r="13"
+                  fill="#FF7A00"
+                  stroke="#FFFFFF"
+                  strokeWidth="3"
+                />
+      
+                <Circle
+                  cx={markerPosition.x}
+                  cy={markerPosition.y}
+                  r="5"
+                  fill="#FFFFFF"
+                />
+      
+                <SvgText
+                  x={markerPosition.x}
+                  y={Math.max(14, markerPosition.y - 18)}
+                  fill="#FF7A00"
+                  fontSize="13"
+                  fontWeight="bold"
+                  textAnchor="middle"
+                >
+                  {`${Math.round(mental)}%`}
+                </SvgText>
+              </Svg>
+            </View>
           </View>
         );
       }
@@ -628,5 +699,22 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: "900",
         zIndex: 4,
+      },
+
+      targetZone: {
+        width: 155,
+        height: 155,
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: 8,
+      },
+      
+      mentalWord: {
+        color: COLORS.orange,
+        fontSize: 13,
+        fontWeight: "900",
+        letterSpacing: 0.8,
+        textAlign: "center",
+        marginTop: 8,
       },
 });

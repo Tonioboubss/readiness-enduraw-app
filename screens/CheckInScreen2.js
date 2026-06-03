@@ -138,7 +138,7 @@ export default function CheckInScreen2({ navigation }) {
       createdAt: new Date().toISOString(),
     });
 
-    navigation.navigate("CheckInScreen3", {
+    navigation.navigate("DailyPrint", {
       checkInSignals: answers,
     });
   };

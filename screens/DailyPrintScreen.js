@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   Dimensions,
+  TouchableOpacity,
 } from "react-native";
 import Svg, { Circle, Polygon, Line, Text as SvgText } from "react-native-svg";
 
@@ -81,7 +82,7 @@ const globalDelta = Math.round(
   dimensions.reduce((sum, d) => sum + d.delta, 0) / dimensions.length
 );
 
-export default function DailyPrintScreen() {
+export default function DailyPrintScreen({ navigation }) {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -101,6 +102,16 @@ export default function DailyPrintScreen() {
             <RadarCard />
           </View>
         </View>
+
+        <TouchableOpacity
+          style={styles.bodyAwarenessButton}
+          onPress={() => navigation.navigate("History")}
+        >
+        <Text style={styles.bodyAwarenessButtonText}>
+        BODY AWARENESS →
+          </Text>
+        </TouchableOpacity>
+
       </ScrollView>
     </View>
   );
@@ -827,4 +838,22 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 16,
   },
+
+  bodyAwarenessButton: {
+        marginTop: 16,
+        backgroundColor: "#7C3AED",
+        borderRadius: 12,
+        paddingVertical: 14,
+        alignItems: "center",
+        justifyContent: "center",
+        borderWidth: 1,
+        borderColor: "#A855F7",
+      },
+      
+      bodyAwarenessButtonText: {
+        color: "#fff",
+        fontSize: 15,
+        fontWeight: "800",
+        letterSpacing: 0.5,
+      },
 });

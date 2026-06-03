@@ -13,9 +13,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: AsyncStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
+    storage: AsyncStorage, // local session save
+    autoRefreshToken: true, //token auto refresh after expiration
+    persistSession: true,  // still connected when app closed
+    detectSessionInUrl: false, // web specific (disabled when on mobile)
   },
 });
+
+/*
+1. Lit les infos de connexion
+2. Crée une connexion à Supabase
+3. Garde l'utilisateur connecté
+4. Rend cette connexion disponible partout dans l'application
+*/

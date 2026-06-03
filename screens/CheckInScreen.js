@@ -4,7 +4,6 @@ import Svg, { Polygon, Path, Circle, Text as SvgText, } from "react-native-svg";
 
 import { COLORS, RADIUS } from "../constants/theme";
 import ProgressSteps from "../components/ProgressSteps";
-import EnergyGauge from "../components/EnergyGauge";
 
 export default function CheckInScreen({ navigation }) {
   const [energy, setEnergy] = useState(72);
@@ -67,54 +66,51 @@ export default function CheckInScreen({ navigation }) {
 }
 
 function EnergyCard({ energy, setEnergy }) {
-        const gaugeSize = 170;
-        const center = gaugeSize / 2;
+        const sliderHeight = 170;
       
-        const updateEnergyFromTouch = (x, y) => {
-          const dx = x - center;
-          const dy = y - center;
+        const updateEnergy = (y) => {
+          const clampedY = Math.max(0, Math.min(y, sliderHeight));
+          let newValue = Math.round(100 - (clampedY / sliderHeight) * 100);
       
-          // Angle en degrés : 0° en haut, progression dans le sens horaire
-          let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+          if (newValue <= 3) newValue = 0;
+          if (newValue >= 97) newValue = 100;
       
-          if (angle < 0) {
-            angle += 360;
-          }
-      
-          // On transforme l'angle en pourcentage
-          const newValue = Math.round((angle / 360) * 100);
-      
-          setEnergy(Math.max(0, Math.min(newValue, 100)));
+          setEnergy(newValue);
         };
       
         const panResponder = useRef(
           PanResponder.create({
             onStartShouldSetPanResponder: () => true,
             onMoveShouldSetPanResponder: () => true,
-      
             onPanResponderGrant: (event) => {
-              updateEnergyFromTouch(
-                event.nativeEvent.locationX,
-                event.nativeEvent.locationY
-              );
+              updateEnergy(event.nativeEvent.locationY);
             },
-      
             onPanResponderMove: (event) => {
-              updateEnergyFromTouch(
-                event.nativeEvent.locationX,
-                event.nativeEvent.locationY
-              );
+              updateEnergy(event.nativeEvent.locationY);
             },
           })
         ).current;
       
         return (
           <View style={styles.verticalCard}>
-            <Text style={styles.cardTitleSmall}>1. ENERGY TANK</Text>
+            <Text style={styles.cardTitleSmall}>1. ENERGY</Text>
             <Text style={styles.questionSmall}>How much Energy in store ?</Text>
       
-            <View style={styles.gaugeTouchZone} {...panResponder.panHandlers}>
-              <EnergyGauge value={energy} />
+            <View style={styles.energySliderZone} {...panResponder.panHandlers}>
+              <View style={styles.batteryCap} />
+      
+              <View style={styles.batteryShell}>
+                <View style={[styles.batteryFill, { height: `${energy}%` }]} />
+      
+                <View
+                  style={[
+                    styles.batteryHandle,
+                    { bottom: `${Math.max(0, Math.min(energy, 96))}%` },
+                  ]}
+                />
+      
+                <Text style={styles.batteryPercent}>{Math.round(energy)}%</Text>
+              </View>
             </View>
           </View>
         );
@@ -575,5 +571,62 @@ const styles = StyleSheet.create({
         color: COLORS.orange,
         fontSize: 14,
         fontWeight: "900",
+      },
+      
+      energySliderZone: {
+        height: 170,
+        width: 120,
+        alignItems: "center",
+        justifyContent: "flex-start",
+        marginTop: 8,
+      },
+
+      batteryCap: {
+        width: 36,
+        height: 8,
+        borderTopLeftRadius: 6,
+        borderTopRightRadius: 6,
+        backgroundColor: "rgba(255,255,255,0.22)",
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        borderBottomWidth: 0,
+      },
+      
+      batteryShell: {
+        width: 88,
+        height: 162,
+        borderRadius: 22,
+        borderWidth: 2,
+        borderColor: "rgba(255,255,255,0.28)",
+        backgroundColor: "rgba(255,255,255,0.05)",
+        overflow: "hidden",
+        justifyContent: "flex-end",
+        alignItems: "center",
+      },
+      
+      batteryFill: {
+        position: "absolute",
+        bottom: 0,
+        width: "100%",
+        backgroundColor: COLORS.orange,
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+      },
+      
+      batteryHandle: {
+        position: "absolute",
+        width: 96,
+        height: 5,
+        borderRadius: 100,
+        backgroundColor: "#FFFFFF",
+        opacity: 0.9,
+        zIndex: 3,
+      },
+      
+      batteryPercent: {
+        color: COLORS.text,
+        fontSize: 24,
+        fontWeight: "900",
+        zIndex: 4,
       },
 });

@@ -336,6 +336,79 @@ export default function BackendTestScreen() {
         }
       };
 
+      const testSubmitDailyCheckin = async () => {
+        try {
+          setMessage("Submitting full daily check-in...");
+      
+          const workflow = await import("../services/dailyworkflowService");
+      
+          const result = await workflow.submitDailyCheckin([
+            {
+              signal_key: "energy",
+              signal_label: "Energy",
+              screen: "checkin1",
+              category: "readiness",
+              value_number: 82,
+            },
+            {
+              signal_key: "recovery",
+              signal_label: "Recovery",
+              screen: "checkin1",
+              category: "readiness",
+              value_number: 74,
+            },
+            {
+              signal_key: "mental_availability",
+              signal_label: "Mental Availability",
+              screen: "checkin1",
+              category: "readiness",
+              value_number: 69,
+            },
+            {
+              signal_key: "physical_aptitude",
+              signal_label: "Physical Aptitude",
+              screen: "checkin1",
+              category: "readiness",
+              value_number: 77,
+            },
+            {
+              signal_key: "ambition",
+              signal_label: "Ambition",
+              screen: "checkin1",
+              category: "readiness",
+              value_number: 88,
+            },
+            {
+              signal_key: "confidence",
+              signal_label: "Confidence",
+              screen: "checkin1",
+              category: "readiness",
+              value_number: 71,
+            },
+          ]);
+      
+          setMessage(
+            JSON.stringify(
+              {
+                status: result.checkin.status,
+                answers: result.answers.length,
+                sensors: result.sensors.length,
+                scores: result.scores.map((score) => ({
+                  key: score.score_key,
+                  value: score.value_number,
+                })),
+                snapshotCreated: !!result.snapshot,
+              },
+              null,
+              2
+            )
+          );
+        } catch (error) {
+          console.log("DAILY WORKFLOW TEST ERROR:", error);
+          setMessage(error?.message || "Unknown error");
+        }
+      };
+
       return (
         <ScrollView
           contentContainerStyle={styles.container}
@@ -432,6 +505,10 @@ export default function BackendTestScreen() {
           <Text style={styles.buttonText}>
             Calculate Body Awareness
           </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.button} onPress={testSubmitDailyCheckin}>
+            <Text style={styles.buttonText}>Submit full daily check-in</Text>
           </TouchableOpacity>
       
           <Text style={styles.message}>

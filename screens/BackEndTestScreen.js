@@ -21,7 +21,44 @@ export default function BackendTestScreen() {
 
       setMessage(`Connected: ${user.email}`);
     } catch (error) {
-      console.log("BACKEND TEST ERROR:", error);
+      console.log("LOGIN TEST ERROR:", error);
+      setMessage(error?.message || "Unknown error");
+    }
+  };
+
+  const testCreateCheckin = async () => {
+    try {
+      setMessage("Creating today's check-in...");
+
+      const checkinService = await import("../services/checkinService");
+
+      const checkin = await checkinService.createTodayCheckin();
+
+      setMessage(JSON.stringify(checkin, null, 2));
+    } catch (error) {
+      console.log("CHECKIN TEST ERROR:", error);
+      setMessage(error?.message || "Unknown error");
+    }
+  };
+
+  const testCompleteCheckin = async () => {
+    try {
+      setMessage("Completing today's check-in...");
+
+      const checkinService = await import("../services/checkinService");
+
+      const checkin = await checkinService.getTodayCheckin();
+
+      if (!checkin) {
+        setMessage("No check-in found today. Create one first.");
+        return;
+      }
+
+      const completedCheckin = await checkinService.completeCheckin(checkin.id);
+
+      setMessage(JSON.stringify(completedCheckin, null, 2));
+    } catch (error) {
+      console.log("COMPLETE CHECKIN TEST ERROR:", error);
       setMessage(error?.message || "Unknown error");
     }
   };
@@ -32,6 +69,14 @@ export default function BackendTestScreen() {
 
       <TouchableOpacity style={styles.button} onPress={testLogin}>
         <Text style={styles.buttonText}>Test login</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={testCreateCheckin}>
+        <Text style={styles.buttonText}>Create today check-in</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={testCompleteCheckin}>
+        <Text style={styles.buttonText}>Complete today check-in</Text>
       </TouchableOpacity>
 
       <Text style={styles.message}>{message}</Text>
@@ -55,6 +100,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#111827",
     padding: 16,
     borderRadius: 14,
+    marginBottom: 12,
   },
   buttonText: {
     color: "white",
@@ -63,6 +109,6 @@ const styles = StyleSheet.create({
   },
   message: {
     marginTop: 24,
-    fontSize: 15,
+    fontSize: 13,
   },
 });

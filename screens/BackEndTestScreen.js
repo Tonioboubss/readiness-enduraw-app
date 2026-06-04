@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 
 export default function BackendTestScreen() {
   const [message, setMessage] = useState("Backend test screen loaded");
@@ -286,50 +286,159 @@ export default function BackendTestScreen() {
         }
       };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Backend Test</Text>
+      const testBodyHistory = async () => {
+        try {
+          setMessage("Loading body history...");
+      
+          const historyService = await import("../services/historyService");
+      
+          const history = await historyService.getBodyHistory(30);
+      
+          console.log("BODY HISTORY FULL",JSON.stringify(history, null, 2));
+          setMessage(JSON.stringify(history, null, 2));
+          console.log("BODY HISTORY",JSON.stringify(history, null, 2));
+        } catch (error) {
+          console.log("BODY HISTORY TEST ERROR:", error);
+          setMessage(error?.message || "Unknown error");
+        }
+      };
 
-      <TouchableOpacity style={styles.button} onPress={testLogin}>
-        <Text style={styles.buttonText}>Test login</Text>
-      </TouchableOpacity>
+      const testBodyAwarenessScore = async () => {
+        try {
+          setMessage("Calculating body awareness...");
+      
+          const historyService = await import(
+            "../services/historyService"
+          );
+      
+          const calculator = await import(
+            "../utils/bodyAwarenessCalculator"
+          );
+      
+          const history =
+            await historyService.getBodyHistory(30);
+      
+          const score =
+            calculator.calculateBodyAwarenessScore(
+              history
+            );
+      
+          setMessage(
+            `Body Awareness Score : ${score}`
+          );
+      
+        } catch (error) {
+          console.log(error);
+      
+          setMessage(
+            error?.message || "Unknown error"
+          );
+        }
+      };
 
-      <TouchableOpacity style={styles.button} onPress={testCreateCheckin}>
-        <Text style={styles.buttonText}>Create today check-in</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.button} onPress={testCompleteCheckin}>
-        <Text style={styles.buttonText}>Complete today check-in</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.button}
-        onPress={testSaveAnswers}
+      return (
+        <ScrollView
+          contentContainerStyle={styles.container}
         >
-        <Text style={styles.buttonText}>
-        Save test answers
-        </Text>
-      </TouchableOpacity>
+          <Text style={styles.title}>
+            Backend Test
+          </Text>
+      
+          <TouchableOpacity
+            style={styles.button}
+            onPress={testLogin}
+          >
+            <Text style={styles.buttonText}>
+              Test login
+            </Text>
+          </TouchableOpacity>
+      
+          <TouchableOpacity
+            style={styles.button}
+            onPress={testCreateCheckin}
+          >
+            <Text style={styles.buttonText}>
+              Create today check-in
+            </Text>
+          </TouchableOpacity>
+      
+          <TouchableOpacity
+            style={styles.button}
+            onPress={testCompleteCheckin}
+          >
+            <Text style={styles.buttonText}>
+              Complete today check-in
+            </Text>
+          </TouchableOpacity>
+      
+          <TouchableOpacity
+            style={styles.button}
+            onPress={testSaveAnswers}
+          >
+            <Text style={styles.buttonText}>
+              Save test answers
+            </Text>
+          </TouchableOpacity>
+      
+          <TouchableOpacity
+            style={styles.button}
+            onPress={testReadinessScore}
+          >
+            <Text style={styles.buttonText}>
+              Calculate readiness score
+            </Text>
+          </TouchableOpacity>
+      
+          <TouchableOpacity
+            style={styles.button}
+            onPress={testMockSensors}
+          >
+            <Text style={styles.buttonText}>
+              Generate Mock Sensors
+            </Text>
+          </TouchableOpacity>
+      
+          <TouchableOpacity
+            style={styles.button}
+            onPress={testPerceptionGapScore}
+          >
+            <Text style={styles.buttonText}>
+              Calculate perception gap
+            </Text>
+          </TouchableOpacity>
+      
+          <TouchableOpacity
+            style={styles.button}
+            onPress={testDailySnapshot}
+          >
+            <Text style={styles.buttonText}>
+              Build daily snapshot
+            </Text>
+          </TouchableOpacity>
+      
+          <TouchableOpacity
+            style={styles.button}
+            onPress={testBodyHistory}
+          >
+            <Text style={styles.buttonText}>
+              Load body history
+            </Text>
+          </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={testReadinessScore}>
-        <Text style={styles.buttonText}>Calculate readiness score</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.button} onPress={testDailySnapshot}>
-          <Text style={styles.buttonText}>Build daily snapshot</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.button} onPress={testMockSensors}>
-          <Text style={styles.buttonText}>Generate Mock Sensors</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.button} onPress={testPerceptionGapScore}>
-          <Text style={styles.buttonText}>Calculate perception gap</Text>
-        </TouchableOpacity>
-
-      <Text style={styles.message}>{message}</Text>
-    </View>
-  );
+          <TouchableOpacity
+            style={styles.button}
+            onPress={testBodyAwarenessScore}
+          >
+          <Text style={styles.buttonText}>
+            Calculate Body Awareness
+          </Text>
+          </TouchableOpacity>
+      
+          <Text style={styles.message}>
+            {message}
+          </Text>
+        </ScrollView>
+      );
 }
 
 const styles = StyleSheet.create({
@@ -355,8 +464,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "700",
   },
-  message: {
-    marginTop: 24,
-    fontSize: 13,
-  },
+  container: {
+        padding: 40,
+        backgroundColor: "#F7F3EA",
+      },
+      
+      message: {
+        marginTop: 24,
+        fontSize: 12,
+        fontFamily: "monospace",
+      },
 });

@@ -343,48 +343,24 @@ export default function BackendTestScreen() {
           const workflow = await import("../services/dailyworkflowService");
       
           const result = await workflow.submitDailyCheckin([
-            {
-              signal_key: "energy",
-              signal_label: "Energy",
-              screen: "checkin1",
-              category: "readiness",
-              value_number: 82,
-            },
-            {
-              signal_key: "recovery",
-              signal_label: "Recovery",
-              screen: "checkin1",
-              category: "readiness",
-              value_number: 74,
-            },
-            {
-              signal_key: "mental_availability",
-              signal_label: "Mental Availability",
-              screen: "checkin1",
-              category: "readiness",
-              value_number: 69,
-            },
-            {
-              signal_key: "physical_aptitude",
-              signal_label: "Physical Aptitude",
-              screen: "checkin1",
-              category: "readiness",
-              value_number: 77,
-            },
-            {
-              signal_key: "ambition",
-              signal_label: "Ambition",
-              screen: "checkin1",
-              category: "readiness",
-              value_number: 88,
-            },
-            {
-              signal_key: "confidence",
-              signal_label: "Confidence",
-              screen: "checkin1",
-              category: "readiness",
-              value_number: 71,
-            },
+                
+                { signal_key: "energy", signal_label: "Energy", screen: "checkin1", category: "readiness", value_number: 82 },
+                { signal_key: "mental_availability", signal_label: "Mental Availability", screen: "checkin1", category: "readiness", value_number: 69 },
+                { signal_key: "physical_aptitude", signal_label: "Physical Aptitude", screen: "checkin1", category: "readiness", value_number: 77 },
+                { signal_key: "confidence", signal_label: "Confidence", screen: "checkin1", category: "readiness", value_number: 71 },
+                
+                { signal_key: "wake_quality", signal_label: "Wake Quality", screen: "checkin2", category: "body_signal", value_number: 80 },
+                { signal_key: "recovery_sensation", signal_label: "Recovery Sensation", screen: "checkin2", category: "body_signal", value_number: 74 },
+                { signal_key: "connection_close_ones", signal_label: "Connection Close Ones", screen: "checkin2", category: "body_signal", value_number: 68 },
+                { signal_key: "willingness_to_go_out", signal_label: "Willingness To Go Out", screen: "checkin2", category: "body_signal", value_number: 83 },
+                { signal_key: "natural_posture", signal_label: "Natural Posture", screen: "checkin2", category: "body_signal", value_number: 76 },
+                { signal_key: "stress", signal_label: "Stress", screen: "checkin2", category: "body_signal", value_number: 70 },
+                { signal_key: "coordination", signal_label: "Coordination", screen: "checkin2", category: "body_signal", value_number: 79 },
+                { signal_key: "satisfaction_yesterday", signal_label: "Satisfaction Yesterday", screen: "checkin2", category: "body_signal", value_number: 84 },
+                { signal_key: "projection_session", signal_label: "Projection Session", screen: "checkin2", category: "body_signal", value_number: 86 },
+                { signal_key: "ambition", signal_label: "Ambition", screen: "checkin2", category: "body_signal", value_number: 88 },
+                { signal_key: "hormonal", signal_label: "Hormonal Feeling", screen: "checkin2", category: "body_signal", value_number: 72 },
+                
           ]);
       
           setMessage(
@@ -393,10 +369,12 @@ export default function BackendTestScreen() {
                 status: result.checkin.status,
                 answers: result.answers.length,
                 sensors: result.sensors.length,
+                dimensions: result.dimensions,
                 scores: result.scores.map((score) => ({
                   key: score.score_key,
                   value: score.value_number,
                 })),
+                snapshotAxes: result.snapshot.snapshot_json.readiness_axes,
                 snapshotCreated: !!result.snapshot,
               },
               null,

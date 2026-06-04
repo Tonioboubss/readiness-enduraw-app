@@ -1,9 +1,6 @@
 import { createTodayCheckin, completeCheckin } from "./checkinService";
 import { saveAnswers, getAnswers } from "./answerService";
-import {
-  saveSensorObservations,
-  getTodaySensorObservations,
-} from "./sensorService";
+import { saveSensorObservations, getTodaySensorObservations,} from "./sensorService";
 import { saveScore, getScores } from "./scoreService";
 import { saveDailySnapshot } from "./snapshotService";
 import { getBodyHistory } from "./historyService";
@@ -13,6 +10,7 @@ import { calculateReadinessScore } from "../utils/readinessCalculator";
 import { calculatePerceptionGapScore } from "../utils/perceptionGapCalculator";
 import { calculateBodyAwarenessScore } from "../utils/bodyAwarenessCalculator";
 import { buildDailySnapshot } from "../utils/snapshotBuilder";
+import { calculateReadinessDimensions,} from "../utils/readinessDimensionsCalculator";
 
 export async function submitDailyCheckin(rawAnswers) {
   if (!Array.isArray(rawAnswers) || rawAnswers.length === 0) {
@@ -34,7 +32,9 @@ export async function submitDailyCheckin(rawAnswers) {
 
   const sensorObservations = await getTodaySensorObservations();
 
-  const readinessScore = calculateReadinessScore(savedAnswers);
+  const dimensions = calculateReadinessDimensions(savedAnswers);
+
+  const readinessScore = calculateReadinessScore(dimensions);
 
   const perceptionGapScore = calculatePerceptionGapScore(
     savedAnswers,
@@ -70,10 +70,7 @@ export async function submitDailyCheckin(rawAnswers) {
 
   const scores = await getScores(checkin.id);
 
-  const snapshot = buildDailySnapshot({
-    answers: savedAnswers,
-    scores,
-  });
+  const snapshot = buildDailySnapshot({scores, dimensions,});
 
   const savedSnapshot = await saveDailySnapshot(checkin.id, snapshot);
 

@@ -1,23 +1,18 @@
-export function calculateReadinessScore(answers) {
-        const readinessKeys = [
-          "energy",
-          "recovery",
-          "mental_availability",
-          "physical_aptitude",
-          "ambition",
-          "confidence",
-        ];
-      
-        const values = answers
-          .filter((answer) => readinessKeys.includes(answer.signal_key))
-          .map((answer) => Number(answer.value_number))
-          .filter((value) => !Number.isNaN(value));
+export function calculateReadinessScore(
+        dimensions
+      ) {
+        const values = Object.values(
+          dimensions
+        ).filter(
+          (v) => v !== null && !Number.isNaN(v)
+        );
       
         if (values.length === 0) {
           return null;
         }
       
-        const total = values.reduce((sum, value) => sum + value, 0);
-      
-        return Math.round(total / values.length);
+        return Math.round(
+          values.reduce((a, b) => a + b, 0) /
+          values.length
+        );
       }

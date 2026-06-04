@@ -1,9 +1,4 @@
-export function buildDailySnapshot({ answers, scores }) {
-        const getAnswerValue = (key) => {
-          const answer = answers.find((item) => item.signal_key === key);
-          return answer ? Number(answer.value_number) : null;
-        };
-      
+export function buildDailySnapshot({ scores, dimensions }) {
         const getScoreValue = (key) => {
           const score = scores.find((item) => item.score_key === key);
           return score ? Number(score.value_number) : null;
@@ -19,12 +14,12 @@ export function buildDailySnapshot({ answers, scores }) {
           },
       
           readiness_axes: {
-            energy: getAnswerValue("energy"),
-            recovery: getAnswerValue("recovery"),
-            mental_availability: getAnswerValue("mental_availability"),
-            physical_aptitude: getAnswerValue("physical_aptitude"),
-            ambition: getAnswerValue("ambition"),
-            confidence: getAnswerValue("confidence"),
+            energy: dimensions?.energy ?? null,
+            recovery: dimensions?.recovery ?? null,
+            mental_availability: dimensions?.mental_availability ?? null,
+            physical_aptitude: dimensions?.physical_aptitude ?? null,
+            ambition: dimensions?.ambition ?? null,
+            confidence: dimensions?.confidence ?? null,
           },
         };
       }

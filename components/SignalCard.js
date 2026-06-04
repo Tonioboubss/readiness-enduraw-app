@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 export default function SignalCard({
@@ -12,16 +12,33 @@ export default function SignalCard({
   value,
   onChange,
   cardWidth = "19%",
+  variant,
 }) {
+  if (variant === "empty") {
+    return (
+      <View
+        style={[
+          styles.card,
+          styles.emptyCard,
+          { width: cardWidth },
+        ]}
+      >
+        <Text style={styles.emptyNumber}>
+          {number}
+        </Text>
+      </View>
+    );
+  }
   return (
-    <View style={[styles.card, { width: cardWidth }]}>
+    <View style={[styles.card,{ width: cardWidth },
+      variant === "hormonal" && styles.hormonalCard,]}>
       <View style={styles.numberCircle}>
         <Text style={styles.numberText}>{number}</Text>
       </View>
 
       <Text style={styles.title}>{title}</Text>
 
-      <Feather name={icon} size={42} color="#D7D7D7" style={styles.icon} />
+      <Feather name={icon} size={25} color="#D7D7D7" style={styles.icon} />
 
       <Text style={styles.question}>{question}</Text>
 
@@ -54,11 +71,11 @@ export default function SignalCard({
 
 const styles = StyleSheet.create({
   card: {
-    minHeight: 255,
-    backgroundColor: "#07131D",
+    height: 200,
+    backgroundColor: "#10151C",
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
+    borderColor: "rgba(255,255,255,0.08)",
     padding: 14,
     marginBottom: 16,
   },
@@ -75,13 +92,13 @@ const styles = StyleSheet.create({
 
   numberText: {
     color: "#FF8500",
-    fontSize: 17,
+    fontSize: 14,
     fontWeight: "900",
   },
 
   title: {
     color: "#F5F5F5",
-    fontSize: 14,
+    fontSize: 10,
     fontWeight: "900",
     textAlign: "center",
     textTransform: "uppercase",
@@ -91,8 +108,7 @@ const styles = StyleSheet.create({
 
   icon: {
     alignSelf: "center",
-    marginTop: 12,
-    marginBottom: 14,
+    marginBottom: 3,
   },
 
   question: {
@@ -100,11 +116,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: "center",
     lineHeight: 17,
-    minHeight: 42,
+    minHeight: 25,
   },
 
   scaleWrapper: {
-    marginTop: 16,
+    marginTop: 14,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -141,7 +157,7 @@ const styles = StyleSheet.create({
   labelsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 10,
+    marginTop: 2,
   },
 
   edgeLabel: {
@@ -152,5 +168,27 @@ const styles = StyleSheet.create({
 
   rightEdgeLabel: {
     textAlign: "right",
+  },
+  hormonalCard: {
+    backgroundColor: "#15110B",
+  borderColor: "rgba(255,133,0,0.22)",
+    shadowColor: "#FF8500",
+    shadowOpacity: 0.25,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 6,
+  },
+  emptyCard: {
+    justifyContent: "center",
+    alignItems: "center",
+    borderStyle: "dashed",
+    borderColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "rgba(255,255,255,0.02)",
+  },
+  
+  emptyNumber: {
+    fontSize: 28,
+    fontWeight: "900",
+    color: "rgba(255,255,255,0.15)",
   },
 });

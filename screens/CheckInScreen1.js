@@ -8,9 +8,10 @@ import ProgressSteps from "../components/ProgressSteps";
 export default function CheckInScreen1({ navigation }) {
   const [energy, setEnergy] = useState(72);
   const [mental, setMental] = useState(66);
-  const [confidence, setConfidence] = useState(73);
+  const [physicalAptitude, setPhysicalAptitude] = useState(73);
+  const [confidence, setConfidence] = useState(70);
 
-  const score = Math.round((energy + mental + confidence) / 3);
+  const score = Math.round((energy + mental + physicalAptitude + confidence) / 4);
 
   return (
     <View style={styles.container}>
@@ -29,13 +30,14 @@ export default function CheckInScreen1({ navigation }) {
       <View style={styles.cardsRow}>
         <EnergyCard energy={energy} setEnergy={setEnergy} />
         <MentalCard mental={mental} setMental={setMental} />
-        <MountainCard value={confidence} onValueChange={setConfidence} />
+        <MountainCard value={physicalAptitude} onValueChange={setPhysicalAptitude} />
+        <SunConfidenceCard value={confidence} onValueChange={setConfidence} />
       </View>
 
       <View style={styles.scoreCard}>
         <View>
-          <Text style={styles.scoreTitle}>TODAY’S SCORE</Text>
-          <Text style={styles.scoreSub}>Average of your signals</Text>
+          <Text style={styles.scoreTitle}>TODAY’S READINESS SCORE</Text>
+          <Text style={styles.scoreSub}>Average of your Main Signals</Text>
         </View>
 
         <Text style={styles.score}>
@@ -54,7 +56,40 @@ export default function CheckInScreen1({ navigation }) {
 
   <TouchableOpacity
     style={styles.continueButton}
-    onPress={() => navigation.navigate("CheckIn2")}
+    onPress={() =>
+      navigation.navigate("CheckIn2", {
+        checkin1Answers: [
+          {
+            signal_key: "energy",
+            signal_label: "Energy",
+            screen: "checkin1",
+            category: "readiness",
+            value_number: energy,
+          },
+          {
+            signal_key: "mental_availability",
+            signal_label: "Mental Availability",
+            screen: "checkin1",
+            category: "readiness",
+            value_number: mental,
+          },
+          {
+            signal_key: "physical_aptitude",
+            signal_label: "Physical Aptitude",
+            screen: "checkin1",
+            category: "readiness",
+            value_number: physicalAptitude,
+          },
+          {
+            signal_key: "confidence",
+            signal_label: "Confidence",
+            screen: "checkin1",
+            category: "readiness",
+            value_number: confidence,
+          },
+        ],
+      })
+    }
   >
     <Text style={styles.continueButtonText}>
       Continue Morning Check-In
@@ -313,7 +348,7 @@ function EnergyCard({ energy, setEnergy }) {
                 return getValueFromPoint(closestPoint);
               };
       
-        const updateConfidence = (x) => {
+        const updatePhysicalAptitude = (x) => {
           const newValue = getClosestValueFromTouch(x);
           onValueChange(newValue);
         };
@@ -323,10 +358,10 @@ function EnergyCard({ energy, setEnergy }) {
             onStartShouldSetPanResponder: () => true,
             onMoveShouldSetPanResponder: () => true,
             onPanResponderGrant: (event) => {
-              updateConfidence(event.nativeEvent.locationX);
+              updatePhysicalAptitude(event.nativeEvent.locationX);
             },
             onPanResponderMove: (event) => {
-              updateConfidence(event.nativeEvent.locationX);
+              updatePhysicalAptitude(event.nativeEvent.locationX);
             },
           })
         ).current;
@@ -350,8 +385,8 @@ function EnergyCard({ energy, setEnergy }) {
 
         return (
           <View style={styles.verticalCard}>
-            <Text style={styles.cardTitleSmall}>3. PHYSICAL CONFIDENCE</Text>
-            <Text style={styles.questionSmall}>How do you rate your athletic power ?</Text>
+            <Text style={styles.cardTitleSmall}>3. PHYSICAL APTITUDE</Text>
+            <Text style={styles.questionSmall}>Where is your athletic power ?</Text>
       
             <View style={styles.mountainZoneCompact} {...panResponder.panHandlers}>
               <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
@@ -400,7 +435,7 @@ function EnergyCard({ energy, setEnergy }) {
                   fill="none"
                 />
       
-                {/* Confidence marker */}
+                {/* Physical Aptitude marker */}
                 <Circle
                   cx={marker.x}
                   cy={marker.y}
@@ -425,6 +460,102 @@ function EnergyCard({ energy, setEnergy }) {
             </View>
       
             <Text style={styles.trailPlace}>{getTrailPlace(value)}</Text>
+          </View>
+        );
+      }
+
+      function SunConfidenceCard({ value, onValueChange }) {
+        const sliderWidth = 120;
+      
+        const updateConfidence = (x) => {
+          const clampedX = Math.max(0, Math.min(x, sliderWidth));
+          const newValue = Math.round((clampedX / sliderWidth) * 100);
+          onValueChange(newValue);
+        };
+      
+        const panResponder = useRef(
+          PanResponder.create({
+            onStartShouldSetPanResponder: () => true,
+            onMoveShouldSetPanResponder: () => true,
+            onPanResponderGrant: (event) => {
+              updateConfidence(event.nativeEvent.locationX);
+            },
+            onPanResponderMove: (event) => {
+              updateConfidence(event.nativeEvent.locationX);
+            },
+          })
+        ).current;
+      
+        const opacity = 0.25 + value / 135;
+        const rayLength = 18 + value * 0.28;
+        const sunRadius = 24 + value * 0.08;
+      
+        return (
+          <View style={styles.verticalCard}>
+            <Text style={styles.cardTitleSmall}>4. CONFIDENCE</Text>
+            <Text style={styles.questionSmall}>
+              How much self-belief ?
+            </Text>
+      
+            <View style={styles.sunZone}>
+              <Svg width={130} height={120} viewBox="0 0 130 120">
+                {[...Array(16)].map((_, i) => {
+                  const angle = (i * Math.PI * 2) / 16;
+                  const x1 = 65 + Math.cos(angle) * (sunRadius + 6);
+                  const y1 = 55 + Math.sin(angle) * (sunRadius + 6);
+                  const x2 = 65 + Math.cos(angle) * (sunRadius + rayLength);
+                  const y2 = 55 + Math.sin(angle) * (sunRadius + rayLength);
+      
+                  return (
+                    <Path
+                      key={i}
+                      d={`M${x1} ${y1} L${x2} ${y2}`}
+                      stroke="#FF8500"
+                      strokeWidth="2"
+                      opacity={opacity}
+                    />
+                  );
+                })}
+      
+                <Circle
+                  cx="65"
+                  cy="55"
+                  r={sunRadius}
+                  fill="#FF8500"
+                  opacity={opacity}
+                />
+      
+                <Circle
+                  cx="65"
+                  cy="55"
+                  r={sunRadius * 0.72}
+                  fill="#FFD27A"
+                  opacity={opacity}
+                />
+      
+                <SvgText
+                  x="65"
+                  y="112"
+                  fill="#FF8500"
+                  fontSize="15"
+                  fontWeight="bold"
+                  textAnchor="middle"
+                >
+                  {`${Math.round(value)}%`}
+                </SvgText>
+              </Svg>
+            </View>
+      
+            <View style={styles.confidenceSlider} {...panResponder.panHandlers}>
+              <View style={styles.confidenceTrack} />
+              <View style={[styles.confidenceFill, { width: `${value}%` }]} />
+              <View
+                style={[
+                  styles.confidenceThumb,
+                  { left: `${Math.max(0, Math.min(value, 96))}%` },
+                ]}
+              />
+            </View>
           </View>
         );
       }
@@ -458,35 +589,35 @@ const styles = StyleSheet.create({
 
   cardsRow: {
     flexDirection: "row",
-    gap: 12,
-    marginBottom: 14,
+    gap: 8,
+    marginBottom: 10,
   },
 
   verticalCard: {
     flex: 1,
-    minHeight: 260,
+    minHeight: 230,
     backgroundColor: COLORS.card,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
-    padding: 14,
+    padding: 10,
     alignItems: "center",
     justifyContent: "space-between",
   },
 
   cardTitleSmall: {
     color: COLORS.text,
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: "900",
     textAlign: "center",
   },
 
   questionSmall: {
     color: COLORS.muted,
-    fontSize: 12,
+    fontSize: 10,
     textAlign: "center",
-    lineHeight: 16,
-    marginTop: 6,
+    lineHeight: 13,
+    marginTop: 4,
   },
 
   verticalSlider: {
@@ -745,5 +876,42 @@ const styles = StyleSheet.create({
         gap: 12,
         marginTop: 24,
         marginBottom: 40,
+      },
+      sunZone: {
+        width: 130,
+        height: 120,
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      
+      confidenceSlider: {
+        width: 120,
+        height: 28,
+        justifyContent: "center",
+      },
+      
+      confidenceTrack: {
+        position: "absolute",
+        width: "100%",
+        height: 5,
+        borderRadius: 99,
+        backgroundColor: "rgba(255,255,255,0.18)",
+      },
+      
+      confidenceFill: {
+        position: "absolute",
+        height: 5,
+        borderRadius: 99,
+        backgroundColor: COLORS.orange,
+      },
+      
+      confidenceThumb: {
+        position: "absolute",
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: COLORS.orange,
+        borderWidth: 2,
+        borderColor: "#FFD29A",
       },
 });

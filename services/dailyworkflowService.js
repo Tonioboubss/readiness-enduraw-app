@@ -81,6 +81,7 @@ export async function submitDailyCheckin(rawAnswers) {
     answers: savedAnswers,
     sensors: sensorObservations,
     scores,
+    dimensions,
     snapshot: savedSnapshot,
   };
 }

@@ -1,36 +1,100 @@
-import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity, Image } from "react-native";
 import { COLORS, RADIUS, SPACING } from "../constants/theme";
+import React, { useEffect, useState } from "react";
+import { getTodayCheckin } from "../services/checkinService";
 
 export default function HomeScreen({ navigation }) {
+
+  const [todayCheckin, setTodayCheckin] = useState(null);
+  const [isLoadingCheckin, setIsLoadingCheckin] = useState(true);
+
+  useEffect(() => {
+    loadTodayCheckin();
+  }, []);
+
+  const loadTodayCheckin = async () => {
+    try {
+      setIsLoadingCheckin(true);
+
+      const checkin = await getTodayCheckin();
+      console.log("TODAY CHECKIN FROM HOME:", checkin);
+
+      setTodayCheckin(checkin);
+    } catch (error) {
+      console.log("LOAD TODAY CHECKIN ERROR:", error);
+    } finally {
+      setIsLoadingCheckin(false);
+    }
+  };
+
+  const hasCompletedToday =
+    todayCheckin?.status === "completed";
+
   return (
     <View style={styles.container}>
-      <Text style={styles.logo}>ENDURAW LAB</Text>
+      <Image source={require("../assets/logo.png")}
+        style={styles.logoImage}
+      />
+      <Text style={styles.logo}>
+        ENDUR
+        <Text style={styles.logoOrange}>
+          AW
+        </Text>
+        {" "}LAB
+      </Text>
+      <Text style={{ color: "white", marginBottom: 12 }}>
+        {isLoadingCheckin
+          ? "Loading check-in..."
+          : todayCheckin
+          ? `Today check-in: ${todayCheckin.status}`
+          : "No check-in today"}
+        </Text>
 
       <View style={styles.card}>
         <Text style={styles.label}>PERFORMANCE PHYSIOLOGY</Text>
 
-        <Text style={styles.title}>
-          Help us Capture Signals. We will Highlight your Effort Readiness.
-        </Text>
+        <Text style={styles.title}>Capture Your Signals.</Text>
+        <Text style={styles.title}>Highlight your Readiness State.</Text>
+        
 
         <Text style={styles.subtitle}>
-          Fill in everyday your mental and physical Shape in less than 60 seconds and discover
-          your fitness grade.
+          60 seconds only to collect your Signals everyday and Get your Readiness index.
         </Text>
 
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => navigation.navigate("CheckIn1")}
-        >
-          <Text style={styles.primaryButtonText}>Start Morning check-in</Text>
-        </TouchableOpacity>
+        {!isLoadingCheckin && !hasCompletedToday && (
+  <TouchableOpacity
+    style={styles.primaryButton}
+    onPress={() => navigation.navigate("CheckIn1")}
+  >
+    <Text style={styles.primaryButtonText}>
+      Start Morning check-in
+    </Text>
+  </TouchableOpacity>
+)}
 
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => navigation.navigate("History")}
-        >
-          <Text style={styles.secondaryButtonText}>Check history</Text>
-        </TouchableOpacity>
+{!isLoadingCheckin && hasCompletedToday && (
+  <TouchableOpacity
+    style={styles.primaryButton}
+    onPress={() =>
+      navigation.navigate("DailyPrint", {
+        checkinId: todayCheckin.id,
+      })
+    }
+  >
+    <Text style={styles.primaryButtonText}>
+      View Today's Daily Print
+    </Text>
+  </TouchableOpacity>
+)}
+
+<TouchableOpacity
+  style={styles.secondaryButton}
+  onPress={() => navigation.navigate("History")}
+>
+  <Text style={styles.secondaryButtonText}>
+    Check history
+  </Text>
+</TouchableOpacity>
       </View>
     </View>
   );
@@ -97,5 +161,15 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     textAlign: "center",
     fontWeight: "800",
+  },
+  logoOrange: {
+    color: COLORS.orange,
+  },
+  logoImage: {
+    width: 50,
+    height: 50,
+    resizeMode: "contain",
+    alignSelf: "left",
+    marginBottom: 6,
   },
 });

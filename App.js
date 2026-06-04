@@ -1,4 +1,4 @@
-/*import { StatusBar } from "expo-status-bar";
+import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
@@ -9,12 +9,6 @@ import CheckOutScreen from "./screens/CheckOutScreen";
 import DailyPrintScreen from "./screens/DailyPrintScreen";
 import HistoryScreen from "./screens/HistoryScreen";
 
-import BackEndTestScreen from "./screens/BackEndTestScreen";
-
-export default function App() { // just to test BackEnd
-  return <BackEndTestScreen />;
-}
-/*
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -37,11 +31,11 @@ export default function App() {
       </Stack.Navigator>
     </NavigationContainer>
   );
-}*/
-
+}
+/*
 import React from "react";
 import BackEndTestScreen from "./screens/BackEndTestScreen";
 
 export default function App() {
   return <BackEndTestScreen />;
-}
+}*/

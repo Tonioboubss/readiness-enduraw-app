@@ -3,20 +3,20 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
+  Pressable,
   SafeAreaView,
-  useWindowDimensions,
 } from "react-native";
 
 import SignalCard from "../components/SignalCard";
-import HormonalCard from "../components/HormonalCard";
+import { submitDailyCheckin } from "../services/dailyworkflowService";
+import ProgressSteps from "../components/ProgressSteps";
 
-export default function CheckInScreen2({ navigation }) {
-  const { width } = useWindowDimensions();
+export default function CheckInScreen2({ navigation, route }) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const checkin1Answers = route?.params?.checkin1Answers || [];
 
-  const isWideScreen = width >= 950;
-  const cardWidth = isWideScreen ? "19%" : "48%";
+  const cardWidth = "23.5%";
 
   const [answers, setAnswers] = useState({
     wakeUpQuality: null,
@@ -43,7 +43,7 @@ export default function CheckInScreen2({ navigation }) {
     {
       number: 1,
       key: "wakeUpQuality",
-      title: "Wake-Up Feeling",
+      title: "Wake-Up\nFeeling",
       question: "What was your wake-up sensation?",
       leftLabel: "Comatose",
       rightLabel: "Up before alarm",
@@ -52,7 +52,7 @@ export default function CheckInScreen2({ navigation }) {
     {
       number: 2,
       key: "recoveryCompleteness",
-      title: "Recovery Completeness",
+      title: "Recovery\nCompleteness",
       question: "Do you feel enough rested?",
       leftLabel: "Incomplete",
       rightLabel: "Complete",
@@ -61,7 +61,7 @@ export default function CheckInScreen2({ navigation }) {
     {
       number: 3,
       key: "socialConnection",
-      title: "Social Connection",
+      title: "Social\nConnection",
       question: "How connected with your loved ones?",
       leftLabel: "Disconnected",
       rightLabel: "Aligned",
@@ -70,7 +70,7 @@ export default function CheckInScreen2({ navigation }) {
     {
       number: 4,
       key: "spontaneousMovement",
-      title: "Movement Mood",
+      title: "Movement\nMood",
       question: "How motivate to go out (not for sport)?",
       leftLabel: "Sedentary",
       rightLabel: "Outside all day",
@@ -79,7 +79,7 @@ export default function CheckInScreen2({ navigation }) {
     {
       number: 5,
       key: "bodyFreedom",
-      title: "Body Attitude",
+      title: "Body\nAttitude",
       question: "How are you holding right now?",
       leftLabel: "Stiff",
       rightLabel: "Fluid",
@@ -88,7 +88,7 @@ export default function CheckInScreen2({ navigation }) {
     {
       number: 6,
       key: "nervousSystemState",
-      title: "Nervous System State",
+      title: "Nervous\nSystem State",
       question: "How tense are you ?",
       leftLabel: "Tense",
       rightLabel: "Calm",
@@ -97,7 +97,7 @@ export default function CheckInScreen2({ navigation }) {
     {
       number: 7,
       key: "motorFluency",
-      title: "Action Capacity",
+      title: "Action\nCapacity",
       question: "How easy is it to undertake ?",
       leftLabel: "Friction",
       rightLabel: "Fluid",
@@ -106,7 +106,7 @@ export default function CheckInScreen2({ navigation }) {
     {
       number: 8,
       key: "yesterdayFulfilment",
-      title: "Yesterday’s Fulfilment",
+      title: "Yesterday’s\nFulfilment",
       question: "How satisfied are you with yesterday?",
       leftLabel: "Frustrated",
       rightLabel: "Enthusiastic",
@@ -115,7 +115,7 @@ export default function CheckInScreen2({ navigation }) {
     {
       number: 9,
       key: "sessionAnticipation",
-      title: "Session Anticipation",
+      title: "Session\nAnticipation",
       question: "How do you feel about today’s session?",
       leftLabel: "Apprehension",
       rightLabel: "Excitement",
@@ -124,46 +124,161 @@ export default function CheckInScreen2({ navigation }) {
     {
       number: 10,
       key: "competitiveDrive",
-      title: "Competitive Drive",
+      title: "Competitive\nDrive",
       question: "How much you want to achieve next aim ?",
       leftLabel: "Lassitude",
       rightLabel: "Hungry",
       icon: "zap",
     },
+    {
+      number: 11,
+      key: "futureSignal",
+      title: "",
+      question: "",
+      leftLabel: "",
+      rightLabel: "",
+      icon: "",
+      variant: "empty",
+    },
+    {
+      number: 12,
+      key: "hormonalBalance",
+      title: "Hormonal\nFeeling",
+      question: "How stable do your hormonal sensations feel?",
+      leftLabel: "Unstable",
+      rightLabel: "Balanced",
+      icon: "circle",
+      variant: "hormonal",
+    },
   ];
 
-  const handleContinue = () => {
-    console.log("Check-in screen 2 answers:", {
-      ...answers,
-      createdAt: new Date().toISOString(),
-    });
-
-    navigation.navigate("DailyPrint", {
-      checkInSignals: answers,
-    });
+  const handleContinue = async () => {
+    try {
+      setIsSubmitting(true);
+  
+      const checkin2Answers = [
+        {
+          signal_key: "wake_quality",
+          signal_label: "Wake Quality",
+          screen: "checkin2",
+          category: "body_signal",
+          value_number: answers.wakeUpQuality,
+        },
+        {
+          signal_key: "recovery_sensation",
+          signal_label: "Recovery Sensation",
+          screen: "checkin2",
+          category: "body_signal",
+          value_number: answers.recoveryCompleteness,
+        },
+        {
+          signal_key: "connection_close_ones",
+          signal_label: "Connection Close Ones",
+          screen: "checkin2",
+          category: "body_signal",
+          value_number: answers.socialConnection,
+        },
+        {
+          signal_key: "willingness_to_go_out",
+          signal_label: "Willingness To Go Out",
+          screen: "checkin2",
+          category: "body_signal",
+          value_number: answers.spontaneousMovement,
+        },
+        {
+          signal_key: "natural_posture",
+          signal_label: "Natural Posture",
+          screen: "checkin2",
+          category: "body_signal",
+          value_number: answers.bodyFreedom,
+        },
+        {
+          signal_key: "stress",
+          signal_label: "Stress",
+          screen: "checkin2",
+          category: "body_signal",
+          value_number: answers.nervousSystemState,
+        },
+        {
+          signal_key: "coordination",
+          signal_label: "Coordination",
+          screen: "checkin2",
+          category: "body_signal",
+          value_number: answers.motorFluency,
+        },
+        {
+          signal_key: "satisfaction_yesterday",
+          signal_label: "Satisfaction Yesterday",
+          screen: "checkin2",
+          category: "body_signal",
+          value_number: answers.yesterdayFulfilment,
+        },
+        {
+          signal_key: "projection_session",
+          signal_label: "Projection Session",
+          screen: "checkin2",
+          category: "body_signal",
+          value_number: answers.sessionAnticipation,
+        },
+        {
+          signal_key: "ambition",
+          signal_label: "Ambition",
+          screen: "checkin2",
+          category: "body_signal",
+          value_number: answers.competitiveDrive,
+        },
+        {
+          signal_key: "hormonal",
+          signal_label: "Hormonal Feeling",
+          screen: "checkin2",
+          category: "body_signal",
+          value_number: answers.hormonalBalance,
+        },
+      ];
+  
+      const allAnswers = [...checkin1Answers, ...checkin2Answers];
+  
+      const result = await submitDailyCheckin(allAnswers);
+  
+      navigation.navigate("DailyPrint", {
+        checkinId: result.checkin.id,
+        snapshot: result.snapshot.snapshot_json,
+      });
+    } catch (error) {
+      console.log("SUBMIT DAILY CHECKIN ERROR:", error);
+      alert(error?.message || "Unable to submit daily check-in.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.topHeader}>
-          <Text style={styles.kicker}>Morning Check-In</Text>
-          <Text style={styles.title}>Daily Signals</Text>
-          <Text style={styles.subtitle}>
-            Rate each signal from 1 to 5. Your answers help adapt your training.
-          </Text>
+      <View style={styles.container}>
+      <View style={styles.topBar}>
+        <Pressable style={styles.backContainer}
+          onPress={() => navigation.goBack()}>
+          <Text style={styles.back}>←</Text>
+        </Pressable>
+
+        <View style={styles.headerCenter}>
+          <Text style={styles.header}>MORNING CHECK-IN</Text>
+          <ProgressSteps currentStep={2} />
         </View>
 
-        <View
-          style={[
-            styles.mainLayout,
-            !isWideScreen && styles.mainLayoutMobile,
-          ]}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          style={styles.validateTopButton}
+          onPress={handleContinue}
+          disabled={isSubmitting}
         >
+          <Text style={styles.validateTopButtonText}>
+            {isSubmitting ? "..." : "GET FOOTPRINT"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+        <View style={styles.mainLayout}>
           <View style={styles.signalsGrid}>
             {signals.map((signal) => (
               <SignalCard
@@ -176,21 +291,10 @@ export default function CheckInScreen2({ navigation }) {
                 rightLabel={signal.rightLabel}
                 value={answers[signal.key]}
                 cardWidth={cardWidth}
+                variant={signal.variant}
                 onChange={(value) => updateAnswer(signal.key, value)}
               />
             ))}
-          </View>
-
-          <View
-            style={[
-              styles.hormonalColumn,
-              !isWideScreen && styles.hormonalColumnMobile,
-            ]}
-          >
-            <HormonalCard
-              value={answers.hormonalBalance}
-              onChange={(value) => updateAnswer("hormonalBalance", value)}
-            />
           </View>
         </View>
 
@@ -201,14 +305,7 @@ export default function CheckInScreen2({ navigation }) {
           </Text>
         </View>
 
-        <TouchableOpacity
-          activeOpacity={0.85}
-          style={styles.continueButton}
-          onPress={handleContinue}
-        >
-          <Text style={styles.continueButtonText}>Continue</Text>
-        </TouchableOpacity>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -216,43 +313,17 @@ export default function CheckInScreen2({ navigation }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#031018",
+    backgroundColor: "#05070A",
   },
-
+  
   container: {
     flex: 1,
-    backgroundColor: "#031018",
+    backgroundColor: "#05070A",
   },
 
   content: {
     padding: 16,
     paddingBottom: 42,
-  },
-
-  topHeader: {
-    marginBottom: 18,
-  },
-
-  kicker: {
-    color: "#FF8500",
-    fontSize: 13,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-
-  title: {
-    color: "#F5F5F5",
-    fontSize: 30,
-    fontWeight: "900",
-    marginTop: 4,
-  },
-
-  subtitle: {
-    color: "#9FAAB4",
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: 6,
   },
 
   mainLayout: {
@@ -270,6 +341,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
+    rowGap:1,
   },
 
   hormonalColumn: {
@@ -311,18 +383,80 @@ const styles = StyleSheet.create({
     maxWidth: 620,
   },
 
-  continueButton: {
-    height: 54,
+  emptyCard: {
+    height: 165,
     borderRadius: 18,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "rgba(255,255,255,0.14)",
+    backgroundColor: "rgba(255,255,255,0.025)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  
+  emptyCardNumber: {
+    color: "rgba(255,255,255,0.18)",
+    fontSize: 32,
+    fontWeight: "900",
+  },
+  
+  hormonalGridCard: {
+    height: 165,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,133,0,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,133,0,0.35)",
+    overflow: "hidden",
+  },
+
+  topBar: {
+    height: 72,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  
+  back: {
+    color: "#F5F5F5",
+    fontSize: 34,
+    fontWeight: "300",
+    width: 70,
+  },
+
+  backContainer: {
+    width: 70,
+    paddingLeft: 10,
+    justifyContent: "center",
+  },
+  
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  
+  header: {
+    color: "#F5F5F5",
+    fontSize: 22,
+    fontWeight: "900",
+    letterSpacing: 1.2,
+    marginBottom: 6,
+  },
+  
+  validateTopButton: {
+    width: 150,
+    height: 48,
+    marginRight: 10,
+    borderRadius: 16,
     backgroundColor: "#FF8500",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 12,
   },
-
-  continueButtonText: {
+  
+  validateTopButtonText: {
     color: "#031018",
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: "900",
     textTransform: "uppercase",
   },

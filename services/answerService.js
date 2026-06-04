@@ -1,0 +1,50 @@
+import { supabase } from "./supabase";
+
+/**
+ * Sauvegarde plusieurs réponses.
+ */
+export async function saveAnswers(checkinId, answers) {
+  const payload = answers.map((answer) => ({
+    checkin_id: checkinId,
+
+    signal_key: answer.signal_key,
+    signal_label: answer.signal_label || null,
+
+    screen: answer.screen || null,
+    category: answer.category || null,
+
+    value_number: answer.value_number ?? null,
+    value_text: answer.value_text ?? null,
+    value_json: answer.value_json ?? null,
+  }));
+
+  const { data, error } = await supabase
+    .from("checkin_answers")
+    .upsert(payload, {
+      onConflict: "checkin_id,signal_key",
+    })
+    .select();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * Récupère toutes les réponses d'un check-in.
+ */
+export async function getAnswers(checkinId) {
+  const { data, error } = await supabase
+    .from("checkin_answers")
+    .select("*")
+    .eq("checkin_id", checkinId)
+    .order("signal_key");
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}

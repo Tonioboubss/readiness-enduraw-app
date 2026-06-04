@@ -63,6 +63,229 @@ export default function BackendTestScreen() {
     }
   };
 
+  const testSaveAnswers = async () => {
+        try {
+          const checkinService = await import(
+            "../services/checkinService"
+          );
+      
+          const answerService = await import(
+            "../services/answerService"
+          );
+      
+          const checkin =
+            await checkinService.createTodayCheckin();
+      
+          const result =
+            await answerService.saveAnswers(
+              checkin.id,
+              [
+                {
+                  signal_key: "energy",
+                  signal_label: "Energy",
+                  screen: "checkin1",
+                  category: "readiness",
+                  value_number: 82,
+                },
+                {
+                  signal_key: "confidence",
+                  signal_label: "Confidence",
+                  screen: "checkin1",
+                  category: "readiness",
+                  value_number: 67,
+                },
+                {
+                  signal_key: "sleep_quality",
+                  signal_label: "Sleep Quality",
+                  screen: "checkin2",
+                  category: "recovery",
+                  value_number: 75,
+                },
+              ]
+            );
+      
+          setMessage(
+            JSON.stringify(result, null, 2)
+          );
+      
+        } catch (error) {
+          console.log(error);
+          setMessage(error.message);
+        }
+      };
+
+      const testReadinessScore = async () => {
+        try {
+          setMessage("Calculating readiness score...");
+      
+          const checkinService = await import("../services/checkinService");
+          const answerService = await import("../services/answerService");
+          const scoreService = await import("../services/scoreService");
+          const readinessCalculator = await import("../utils/readinessCalculator");
+      
+          const checkin = await checkinService.createTodayCheckin();
+      
+          const answers = await answerService.saveAnswers(checkin.id, [
+            {
+              signal_key: "energy",
+              signal_label: "Energy",
+              screen: "checkin1",
+              category: "readiness",
+              value_number: 82,
+            },
+            {
+              signal_key: "recovery",
+              signal_label: "Recovery",
+              screen: "checkin1",
+              category: "readiness",
+              value_number: 74,
+            },
+            {
+              signal_key: "mental_availability",
+              signal_label: "Mental Availability",
+              screen: "checkin1",
+              category: "readiness",
+              value_number: 69,
+            },
+            {
+              signal_key: "physical_aptitude",
+              signal_label: "Physical Aptitude",
+              screen: "checkin1",
+              category: "readiness",
+              value_number: 77,
+            },
+            {
+              signal_key: "ambition",
+              signal_label: "Ambition",
+              screen: "checkin1",
+              category: "readiness",
+              value_number: 88,
+            },
+            {
+              signal_key: "confidence",
+              signal_label: "Confidence",
+              screen: "checkin1",
+              category: "readiness",
+              value_number: 71,
+            },
+          ]);
+      
+          const readinessScore =
+            readinessCalculator.calculateReadinessScore(answers);
+      
+          const savedScore = await scoreService.saveScore(checkin.id, {
+            score_key: "readiness_score",
+            score_label: "Readiness Score",
+            value_number: readinessScore,
+            score_version: "v1",
+          });
+      
+          setMessage(JSON.stringify(savedScore, null, 2));
+        } catch (error) {
+          console.log("READINESS SCORE TEST ERROR:", error);
+          setMessage(error?.message || "Unknown error");
+        }
+      };
+
+      const testDailySnapshot = async () => {
+        try {
+          setMessage("Building daily snapshot...");
+      
+          const checkinService = await import("../services/checkinService");
+          const answerService = await import("../services/answerService");
+          const scoreService = await import("../services/scoreService");
+          const snapshotService = await import("../services/snapshotService");
+          const snapshotBuilder = await import("../utils/snapshotBuilder");
+      
+          const checkin = await checkinService.createTodayCheckin();
+      
+          const answers = await answerService.getAnswers(checkin.id);
+          const scores = await scoreService.getScores(checkin.id);
+      
+          const snapshot = snapshotBuilder.buildDailySnapshot({
+            answers,
+            scores,
+          });
+      
+          const savedSnapshot = await snapshotService.saveDailySnapshot(
+            checkin.id,
+            snapshot
+          );
+      
+          setMessage(JSON.stringify(savedSnapshot, null, 2));
+        } catch (error) {
+          console.log("DAILY SNAPSHOT TEST ERROR:", error);
+          setMessage(error?.message || "Unknown error");
+        }
+      };
+
+      const testMockSensors = async () => {
+        try {
+          const sensorService = await import(
+            "../services/sensorService"
+          );
+      
+          const generator = await import(
+            "../utils/mockSensorGenerator"
+          );
+      
+          const observations =
+            generator.generateMockSensorData();
+      
+          const result =
+            await sensorService.saveSensorObservations(
+              observations
+            );
+      
+          setMessage(
+            JSON.stringify(result, null, 2)
+          );
+      
+        } catch (error) {
+          console.log(error);
+          setMessage(error.message);
+        }
+      };
+
+      const testPerceptionGapScore = async () => {
+        try {
+          setMessage("Calculating perception gap score...");
+      
+          const checkinService = await import("../services/checkinService");
+          const answerService = await import("../services/answerService");
+          const sensorService = await import("../services/sensorService");
+          const scoreService = await import("../services/scoreService");
+          const perceptionGapCalculator = await import(
+            "../utils/perceptionGapCalculator"
+          );
+      
+          const checkin = await checkinService.createTodayCheckin();
+      
+          const answers = await answerService.getAnswers(checkin.id);
+      
+          const observations =
+            await sensorService.getTodaySensorObservations();
+      
+          const perceptionGapScore =
+            perceptionGapCalculator.calculatePerceptionGapScore(
+              answers,
+              observations
+            );
+      
+          const savedScore = await scoreService.saveScore(checkin.id, {
+            score_key: "perception_gap_score",
+            score_label: "Perception Gap Score",
+            value_number: perceptionGapScore,
+            score_version: "v1",
+          });
+      
+          setMessage(JSON.stringify(savedScore, null, 2));
+        } catch (error) {
+          console.log("PERCEPTION GAP TEST ERROR:", error);
+          setMessage(error?.message || "Unknown error");
+        }
+      };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Backend Test</Text>
@@ -78,6 +301,31 @@ export default function BackendTestScreen() {
       <TouchableOpacity style={styles.button} onPress={testCompleteCheckin}>
         <Text style={styles.buttonText}>Complete today check-in</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.button}
+        onPress={testSaveAnswers}
+        >
+        <Text style={styles.buttonText}>
+        Save test answers
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={testReadinessScore}>
+        <Text style={styles.buttonText}>Calculate readiness score</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.button} onPress={testDailySnapshot}>
+          <Text style={styles.buttonText}>Build daily snapshot</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.button} onPress={testMockSensors}>
+          <Text style={styles.buttonText}>Generate Mock Sensors</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.button} onPress={testPerceptionGapScore}>
+          <Text style={styles.buttonText}>Calculate perception gap</Text>
+        </TouchableOpacity>
 
       <Text style={styles.message}>{message}</Text>
     </View>

@@ -11,6 +11,9 @@ import { calculatePerceptionGapScore } from "../utils/perceptionGapCalculator";
 import { calculateBodyAwarenessScore } from "../utils/bodyAwarenessCalculator";
 import { buildDailySnapshot } from "../utils/snapshotBuilder";
 import { calculateReadinessDimensions,} from "../utils/readinessDimensionsCalculator";
+import { calculateSensorDimensionProxies } from "../utils/sensorDimensionProxyCalculator";
+import { calculatePerceptionGapAnalysis } from "../utils/perceptionGapCalculator";
+import { calculateSensorReadinessScore } from "../utils/sensorReadinessCalculator";
 
 export async function submitDailyCheckin(rawAnswers) {
   if (!Array.isArray(rawAnswers) || rawAnswers.length === 0) {
@@ -36,9 +39,12 @@ export async function submitDailyCheckin(rawAnswers) {
 
   const readinessScore = calculateReadinessScore(dimensions);
 
-  const perceptionGapScore = calculatePerceptionGapScore(
-    savedAnswers,
-    sensorObservations
+  const sensorAxes = calculateSensorDimensionProxies(sensorObservations);
+  const sensorReadinessScore = calculateSensorReadinessScore(sensorAxes);
+
+  const perceptionGapAnalysis = calculatePerceptionGapAnalysis(
+    dimensions,
+    sensorAxes
   );
 
   await saveScore(checkin.id, {
@@ -49,9 +55,10 @@ export async function submitDailyCheckin(rawAnswers) {
   });
 
   await saveScore(checkin.id, {
-    score_key: "perception_gap_score",
-    score_label: "Perception Gap Score",
-    value_number: perceptionGapScore,
+    score_key: "sensor_readiness_score",
+    score_label: "Sensor Readiness Score",
+    value_number: sensorReadinessScore,
+    value_json: sensorAxes,
     score_version: "v1",
   });
 
@@ -70,7 +77,11 @@ export async function submitDailyCheckin(rawAnswers) {
 
   const scores = await getScores(checkin.id);
 
-  const snapshot = buildDailySnapshot({scores, dimensions,});
+  const snapshot = buildDailySnapshot({scores, dimensions, sensorAxes, perceptionGapAnalysis});
+  console.log(
+    "DAILY SNAPSHOT",
+    JSON.stringify(snapshot, null, 2)
+  );
 
   const savedSnapshot = await saveDailySnapshot(checkin.id, snapshot);
 

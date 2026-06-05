@@ -131,3 +131,83 @@ export async function getBodyHistory(limit = 30) {
 
   return data;
 }
+
+/**
+ * Récupère le Daily Snapshot du jour.
+ */
+export async function getTodaySnapshot() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    throw new Error("No authenticated user");
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const { data, error } = await supabase
+    .from("daily_checkins")
+    .select(`
+      id,
+      checkin_date,
+      status,
+      daily_snapshots (
+        snapshot_json,
+        created_at
+      )
+    `)
+    .eq("user_id", user.id)
+    .eq("checkin_date", today)
+    .eq("status", "completed")
+    .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+    
+    console.log("GET TODAY SNAPSHOT RAW DATA:", JSON.stringify(data, null, 2));
+    
+    const snapshotRelation = data?.daily_snapshots;
+    
+    if (Array.isArray(snapshotRelation)) {
+      return snapshotRelation[0]?.snapshot_json ?? null;
+    }
+    
+    return snapshotRelation?.snapshot_json ?? null;
+}
+
+export async function getYesterdaySnapshot() {
+  const snapshots = await getRecentSnapshots(10);
+
+  console.log(
+    "RAW RECENT SNAPSHOTS",
+    JSON.stringify(snapshots, null, 2)
+  );
+
+  const completedWithSnapshot = snapshots.filter((item) => {
+    const relation = item.daily_snapshots;
+
+    const hasSnapshot = Array.isArray(relation)
+      ? relation.length > 0
+      : !!relation?.snapshot_json;
+
+    return item.status === "completed" && hasSnapshot;
+  });
+
+  console.log(
+    "COMPLETED SNAPSHOTS",
+    JSON.stringify(completedWithSnapshot, null, 2)
+  );
+
+  if (completedWithSnapshot.length < 2) {
+    return null;
+  }
+
+  const yesterdayRelation =
+    completedWithSnapshot[1].daily_snapshots;
+
+  if (Array.isArray(yesterdayRelation)) {
+    return yesterdayRelation[0]?.snapshot_json ?? null;
+  }
+
+  return yesterdayRelation?.snapshot_json ?? null;
+}

@@ -1,88 +1,206 @@
-import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Dimensions,
-  TouchableOpacity,
-} from "react-native";
+import {View,Text,StyleSheet,ScrollView,Dimensions,TouchableOpacity,} from "react-native";
 import Svg, { Circle, Polygon, Line, Text as SvgText } from "react-native-svg";
 
+import React, { useEffect, useState } from "react";
+import { getTodaySnapshot, getYesterdaySnapshot } from "../services/historyService";
+
 const { width } = Dimensions.get("window");
+function getReadinessStatus(score) {
+  if (score >= 75) {
+    return {
+      label: "HIGH",
+      color: "#91d94f",
+      text: "Your body and mind look ready to perform.",
+    };
+  }
 
-const dimensions = [
-  {
-    label: "Energy Level",
-    shortLabel: "ENERGY",
-    icon: "⚡",
-    score: 75,
-    sensor: 60,
-    delta: 15,
-    yesterday: 9,
-    description: "",
-  },
-  {
-    label: "Recovery Rate",
-    shortLabel: "RECOVERY",
-    icon: "🌙",
-    score: 68,
-    sensor: 88,
-    delta: -20,
-    yesterday: -4,
-    description: "",
-  },
-  {
-    label: "Mental Availability",
-    shortLabel: "MENTAL",
-    icon: "🧠",
-    score: 70,
-    sensor: 75,
-    delta: -5,
-    yesterday: 5,
-    description: "",
-  },
-  {
-    label: "Physical Shape",
-    shortLabel: "PHYSICAL",
-    icon: "🏃",
-    score: 74,
-    sensor: 64,
-    delta: 10,
-    yesterday: 7,
-    description: "",
-  },
-  {
-    label: "Confidence Level",
-    shortLabel: "CONFIDENCE",
-    icon: "🛡️",
-    score: 65,
-    sensor: 60,
-    delta: 5,
-    yesterday: -3,
-    description: "",
-  },
-  {
-    label: "Ambition Evolution",
-    shortLabel: "AMBITION",
-    icon: "⛰️",
-    score: 78,
-    sensor: 70,
-    delta: 8,
-    yesterday: 6,
-    description: "",
-  },
-];
+  if (score >= 50) {
+    return {
+      label: "MODERATE",
+      color: "#ff8500",
+      text: "You show a balanced but not optimal readiness state.",
+    };
+  }
 
-const readinessScore = Math.round(
-  dimensions.reduce((sum, d) => sum + d.score, 0) / dimensions.length
-);
+  if (score >= 25) {
+    return {
+      label: "LOW",
+      color: "#ffb020",
+      text: "Your readiness is limited today. Adjust intensity with care.",
+    };
+  }
 
-const globalDelta = Math.round(
-  dimensions.reduce((sum, d) => sum + d.delta, 0) / dimensions.length
-);
+  return {
+    label: "VERY LOW",
+    color: "#ff4b3e",
+    text: "Your signals show a strong readiness limitation today.",
+  };
+}
 
-export default function DailyPrintScreen({ navigation }) {
+function getGapStatus(gap) {
+  if (gap <= -50) {
+    return {
+      label: "Strong underestimation",
+      color: "#ff4b3e",
+      title: "You strongly underestimate your capacities today.",
+      desc: "Your subjective signals are far below what your sensor data suggests.",
+    };
+  }
+
+  if (gap < -20) {
+    return {
+      label: "Soft underestimation",
+      color: "#ff8a80",
+      title: "You underestimate your capacities today.",
+      desc: "Your subjective signals sit below your current sensor baseline.",
+    };
+  }
+
+  if (gap <= 20) {
+    return {
+      label: "Aligned",
+      color: "#cbd5e1",
+      title: "Your perception and sensors are aligned today.",
+      desc: "Your subjective signals match your current objective data quite well.",
+    };
+  }
+
+  if (gap <= 50) {
+    return {
+      label: "Soft overestimation",
+      color: "#93c5fd",
+      title: "You slightly overestimate your capacities today.",
+      desc: "Your subjective signals sit above your current sensor baseline.",
+    };
+  }
+
+  return {
+    label: "Strong overestimation",
+    color: "#3b82f6",
+    title: "You strongly overestimate your capacities today.",
+    desc: "Your subjective signals are far above what your sensor data suggests.",
+  };
+}
+
+function formatSigned(value) {
+  if (value === null || value === undefined) return "--";
+  return value > 0 ? `+${value}` : `${value}`;
+}
+
+export default function DailyPrintScreen({ navigation, route }) {
+  const initialSnapshot = route?.params?.snapshot || null;
+  const [snapshot, setSnapshot] = useState(initialSnapshot);
+  const [yesterdaySnapshot, setYesterdaySnapshot] = useState(null);
+
+  useEffect(() => {
+      loadSnapshot();
+  }, []);
+
+  async function loadSnapshot() {
+    try {
+      const data = await getTodaySnapshot();
+      console.log("TODAY SNAPSHOT", JSON.stringify(data, null, 2));
+      setSnapshot(data);
+      const today = await getTodaySnapshot();
+      const yesterday = await getYesterdaySnapshot();
+      console.log("YESTERDAY SNAPSHOT",
+        JSON.stringify(yesterday, null, 2));
+      setSnapshot(today);
+      setYesterdaySnapshot(yesterday);
+    } catch (error) {
+      console.log("LOAD DAILY SNAPSHOT ERROR:", error);
+    }
+  }
+
+  if (!snapshot) {
+    return (
+      <View style={styles.screen}>
+        <Text style={{ color: "white" }}>
+          Loading Daily Print...
+        </Text>
+      </View>
+    );
+  }
+
+  const dimensions = [
+    {
+      label: "Energy",
+      shortLabel: "ENERGY",
+      icon: "⚡",
+      score: snapshot.readiness_axes.energy,
+      sensor: snapshot.sensor_axes.energy,
+      delta: snapshot.perception_gap.axes.energy.signed_gap,
+      yesterday:
+      yesterdaySnapshot ? snapshot.readiness_axes.energy -
+          yesterdaySnapshot.readiness_axes.energy : 0,
+      },
+  
+    {
+      label: "Recovery",
+      shortLabel: "RECOVERY",
+      icon: "🌙",
+      score: snapshot.readiness_axes.recovery,
+      sensor: snapshot.sensor_axes.recovery,
+      delta: snapshot.perception_gap.axes.recovery.signed_gap,
+      yesterday:
+      yesterdaySnapshot ? snapshot.readiness_axes.recovery -
+          yesterdaySnapshot.readiness_axes.recovery : 0,
+      },
+  
+    {
+      label: "Mental Availability",
+      shortLabel: "MENTAL",
+      icon: "🧠",
+      score: snapshot.readiness_axes.mental_availability,
+      sensor: snapshot.sensor_axes.mental_availability,
+      delta: snapshot.perception_gap.axes.mental_availability.signed_gap,
+      delta: snapshot.perception_gap.axes.mental_availability.signed_gap,
+      yesterday:
+      yesterdaySnapshot ? snapshot.readiness_axes.mental_availability -
+          yesterdaySnapshot.readiness_axes.mental_availability : 0,
+      },
+  
+    {
+      label: "Physical Aptitude",
+      shortLabel: "PHYSICAL",
+      icon: "🏃",
+      score: snapshot.readiness_axes.physical_aptitude,
+      sensor: snapshot.sensor_axes.physical_aptitude,
+      delta: snapshot.perception_gap.axes.physical_aptitude.signed_gap,
+      yesterday:
+      yesterdaySnapshot ? snapshot.readiness_axes.physical_aptitude -
+          yesterdaySnapshot.readiness_axes.physical_aptitude : 0,
+      },
+  
+    {
+      label: "Confidence",
+      shortLabel: "CONFIDENCE",
+      icon: "🛡️",
+      score: snapshot.readiness_axes.confidence,
+      sensor: snapshot.sensor_axes.confidence,
+      delta: snapshot.perception_gap.axes.confidence.signed_gap,
+      yesterday:
+      yesterdaySnapshot ? snapshot.readiness_axes.confidence -
+          yesterdaySnapshot.readiness_axes.confidence : 0,
+      },
+  
+    {
+      label: "Ambition",
+      shortLabel: "AMBITION",
+      icon: "⛰️",
+      score: snapshot.readiness_axes.ambition,
+      sensor: snapshot.sensor_axes.ambition,
+      delta: snapshot.perception_gap.axes.ambition.signed_gap,
+      yesterday:
+      yesterdaySnapshot ? snapshot.readiness_axes.ambition -
+          yesterdaySnapshot.readiness_axes.ambition : 0,
+      },
+  ];
+
+  const readinessDelta = yesterdaySnapshot
+  ? snapshot.scores.readiness_score -
+  yesterdaySnapshot.scores.readiness_score : 0;
+
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -95,11 +213,13 @@ export default function DailyPrintScreen({ navigation }) {
 
         <View style={styles.layout}>
           <View style={styles.leftColumn}>
-            <ReadinessCard />
+            <ReadinessCard snapshot={snapshot}
+            dimensions={dimensions}
+            readinessDelta={readinessDelta}/>
           </View>
 
           <View style={styles.rightColumn}>
-            <RadarCard />
+            <RadarCard snapshot={snapshot} dimensions={dimensions}/>
           </View>
         </View>
 
@@ -117,7 +237,12 @@ export default function DailyPrintScreen({ navigation }) {
   );
 }
 
-function ReadinessCard() {
+function ReadinessCard({snapshot, dimensions, readinessDelta }) {
+  
+  const readinessStatus = getReadinessStatus(
+    snapshot.scores.readiness_score
+  );
+
   return (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>1. TODAY READINESS INDEX</Text>
@@ -126,13 +251,15 @@ function ReadinessCard() {
       </Text>
 
       <View style={styles.readinessTop}>
-        <ReadinessGauge value={readinessScore} />
+        <ReadinessGauge value={snapshot.scores.readiness_score} />
 
         <View style={styles.readinessText}>
           <Text style={styles.bodyText}>
-            Your body and mind are ready to perform !
+            {readinessStatus.text}
           </Text>
-          <Text style={styles.bigGreen}>↗ +6</Text>
+          <Text style={readinessDelta >= 0 ? styles.bigGreen : styles.red}>
+            {readinessDelta >= 0 ? "↗ +" : "↘ "} {readinessDelta}
+          </Text>
           <Text style={styles.mutedText}>vs D-1</Text>
         </View>
       </View>
@@ -217,7 +344,7 @@ function ReadinessGauge({ value }) {
           cx={center}
           cy={center}
           r={radius}
-          stroke="#91d94f"
+          stroke={getReadinessStatus(value).color}
           strokeWidth={strokeWidth}
           fill="none"
           strokeLinecap="round"
@@ -230,13 +357,17 @@ function ReadinessGauge({ value }) {
       <View style={styles.gaugeCenter}>
         <Text style={styles.gaugeValue}>{value}</Text>
         <Text style={styles.gaugeTotal}>/100</Text>
-        <Text style={styles.gaugeLabel}>ÉLEVÉ</Text>
+        <Text style={[styles.gaugeLabel, { color: getReadinessStatus(value).color }]}>
+          {getReadinessStatus(value).label}
+        </Text>
       </View>
     </View>
   );
 }
 
-function RadarCard() {
+function RadarCard({snapshot, dimensions}) {
+  const gapStatus = getGapStatus(snapshot.scores.global_gap);
+
   return (
     <View style={styles.card}>
       <View style={styles.radarHeaderRow}>
@@ -249,23 +380,21 @@ function RadarCard() {
 
         <View style={styles.globalDeltaBox}>
           <Text style={styles.globalDeltaLabel}>GLOBAL GAP</Text>
-          <Text style={styles.globalDeltaValue}>
-            {globalDelta > 0 ? `+${globalDelta}` : globalDelta}
+          <Text style={[styles.globalDeltaValue, { color: gapStatus.color }]}>
+            {formatSigned(snapshot.scores.global_gap)}
           </Text>
-          <Text style={styles.globalDeltaStatus}>Soft Deviation</Text>
+          <Text style={[styles.globalDeltaStatus, { color: gapStatus.color }]}>
+            {gapStatus.label}
+          </Text>
         </View>
       </View>
 
       <View style={styles.coherenceMiniText}>
-        <Text style={styles.coherenceMiniTitle}>
-          Your underestimate softly your capacities today.
-        </Text>
-        <Text style={styles.coherenceMiniDesc}>
-          Your signal levels seems quite below your current data.
-        </Text>
+      <Text style={styles.coherenceMiniTitle}>{gapStatus.title}</Text>
+      <Text style={styles.coherenceMiniDesc}>{gapStatus.desc}</Text>
       </View>
 
-      <CoherenceScale value={globalDelta} />
+      <CoherenceScale value={snapshot.scores.global_gap} />
 
       <View style={styles.legend}>
         <Text style={styles.legendItem}>● Signals</Text>
@@ -278,7 +407,7 @@ function RadarCard() {
       <View style={styles.readingBox}>
         <Text style={styles.readingTitle}>HOW TO READ SIGNALS VS DATA</Text>
         <Text style={styles.readingText}>
-          🟢 &gt; 10                    ⚪ -10 à +10           🔴 &lt; -10
+          🟢 &gt; 20                    ⚪ -20 à +20           🔴 &lt; -20
         </Text>
       </View>
     </View>
@@ -400,35 +529,38 @@ function RadarChart({ data }) {
 }
 
 function CoherenceScale({ value }) {
-  const safeValue = Math.max(-30, Math.min(30, value));
-  const left = `${((safeValue + 30) / 60) * 100}%`;
+  const safeValue = Math.max(-100, Math.min(100, value));
+  const left = `${((safeValue + 100) / 200) * 100}%`;
 
   return (
     <View style={styles.scaleContainer}>
       <View style={styles.scaleLine}>
-        <View style={styles.redZone} />
-        <View style={styles.neutralZone} />
-        <View style={styles.greenZone} />
+        <View style={styles.strongUnderZone} />
+        <View style={styles.softUnderZone} />
+        <View style={styles.alignedZone} />
+        <View style={styles.softOverZone} />
+        <View style={styles.strongOverZone} />
 
         <View style={[styles.marker, { left }]}>
           <Text style={styles.markerBubble}>
-            {value > 0 ? `+${value}` : value}
+            {formatSigned(value)}
           </Text>
         </View>
       </View>
 
       <View style={styles.scaleNumbers}>
-        <Text style={styles.scaleNumber}>-30</Text>
-        <Text style={styles.scaleNumber}>-15</Text>
-        <Text style={styles.scaleNumber}>0</Text>
-        <Text style={styles.scaleNumber}>+15</Text>
-        <Text style={styles.scaleNumber}>+30</Text>
+        <Text style={styles.scaleNumber}>-100</Text>
+        <Text style={styles.scaleNumber}>-50</Text>
+        <Text style={styles.scaleNumber}>-20</Text>
+        <Text style={styles.scaleNumber}>+20</Text>
+        <Text style={styles.scaleNumber}>+50</Text>
+        <Text style={styles.scaleNumber}>+100</Text>
       </View>
 
       <View style={styles.scaleLabels}>
-        <Text style={styles.redLabel}>Underestimation</Text>
+        <Text style={styles.redLabel}>Strong under</Text>
         <Text style={styles.neutralLabel}>Aligned</Text>
-        <Text style={styles.greenLabel}>Overfitting</Text>
+        <Text style={styles.blueLabel}>Strong over</Text>
       </View>
     </View>
   );
@@ -718,23 +850,38 @@ const styles = StyleSheet.create({
     position: "relative",
   },
 
-  redZone: {
-    flex: 1,
+  strongUnderZone: {
+    flex: 50,
     backgroundColor: "#ff4b3e",
     borderTopLeftRadius: 8,
     borderBottomLeftRadius: 8,
   },
-
-  neutralZone: {
-    flex: 1,
+  
+  softUnderZone: {
+    flex: 30,
+    backgroundColor: "#ff8a80",
+  },
+  
+  alignedZone: {
+    flex: 40,
     backgroundColor: "#cbd5e1",
   },
-
-  greenZone: {
-    flex: 1,
-    backgroundColor: "#91d94f",
+  
+  softOverZone: {
+    flex: 30,
+    backgroundColor: "#93c5fd",
+  },
+  
+  strongOverZone: {
+    flex: 50,
+    backgroundColor: "#3b82f6",
     borderTopRightRadius: 8,
     borderBottomRightRadius: 8,
+  },
+  
+  blueLabel: {
+    color: "#3b82f6",
+    fontSize: 9,
   },
 
   marker: {
@@ -745,17 +892,17 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     backgroundColor: "#ffffff",
     borderWidth: 3,
-    borderColor: "#a855f7",
+    borderColor: "#ff8500",
     transform: [{ translateX: -8.5 }],
   },
-
+  
   markerBubble: {
     position: "absolute",
     top: -32,
     left: -14,
-    backgroundColor: "#a855f7",
-    color: "#ffffff",
-    fontWeight: "800",
+    backgroundColor: "#ff8500",
+    color: "#031018",
+    fontWeight: "900",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 7,

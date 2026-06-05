@@ -64,7 +64,7 @@ export default function HomeScreen({ navigation }) {
         {!isLoadingCheckin && !hasCompletedToday && (
   <TouchableOpacity
     style={styles.primaryButton}
-    onPress={() => navigation.navigate("CheckIn1")}
+    onPress={() => navigation.navigate("CheckIn1", {readOnly: true,})}
   >
     <Text style={styles.primaryButtonText}>
       Start Morning check-in

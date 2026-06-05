@@ -13,6 +13,7 @@ export default function SignalCard({
   onChange,
   cardWidth = "19%",
   variant,
+  disabled=false
 }) {
   if (variant === "empty") {
     return (
@@ -41,7 +42,7 @@ export default function SignalCard({
       <Feather name={icon} size={25} color="#D7D7D7" style={styles.icon} />
 
       <Text style={styles.question}>{question}</Text>
-
+      
       <View style={styles.scaleWrapper}>
         <Text style={styles.scaleNumber}>1</Text>
 
@@ -49,9 +50,15 @@ export default function SignalCard({
           {[1, 2, 3, 4, 5].map((score) => (
             <TouchableOpacity
               key={score}
-              activeOpacity={0.8}
-              onPress={() => onChange(score)}
-              style={[styles.dot, value === score && styles.dotSelected]}
+              activeOpacity={disabled ? 1 : 0.8}
+              onPress={() => {
+                if (disabled) return;
+                onChange(score);
+              }}
+              style={[
+                styles.dot,
+                value === score && styles.dotSelected,
+              ]}
             />
           ))}
         </View>
@@ -192,3 +199,4 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.15)",
   },
 });
+

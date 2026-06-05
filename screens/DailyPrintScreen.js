@@ -1,8 +1,9 @@
-import {View,Text,StyleSheet,ScrollView,Dimensions,TouchableOpacity,} from "react-native";
+import {View,Text,StyleSheet,ScrollView,Dimensions,TouchableOpacity,Pressable} from "react-native";
 import Svg, { Circle, Polygon, Line, Text as SvgText } from "react-native-svg";
 
 import React, { useEffect, useState } from "react";
 import { getTodaySnapshot, getYesterdaySnapshot } from "../services/historyService";
+import ProgressSteps from "../components/ProgressSteps";
 
 const { width } = Dimensions.get("window");
 function getReadinessStatus(score) {
@@ -204,11 +205,28 @@ export default function DailyPrintScreen({ navigation, route }) {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>DAILY FOOTPRINT</Text>
-          <Text style={styles.subtitle}>
-            When your signals face your sensors data
-          </Text>
+      <View style={styles.topBar}>
+        <Pressable
+          style={styles.backContainer}
+          onPress={() => navigation.navigate("CheckIn2", { readOnly: true })}
+        >
+          <Text style={styles.back}>←</Text>
+          </Pressable>
+
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>DAILY FOOTPRINT</Text>
+            <ProgressSteps currentStep={3} completedSteps={[1, 2, 3]} />
+          </View>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            style={styles.historyTopButton}
+            onPress={() => navigation.navigate("History")}
+          >
+            <Text style={styles.historyTopButtonText}>
+              HISTORY
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.layout}>
@@ -222,15 +240,6 @@ export default function DailyPrintScreen({ navigation, route }) {
             <RadarCard snapshot={snapshot} dimensions={dimensions}/>
           </View>
         </View>
-
-        <TouchableOpacity
-          style={styles.bodyAwarenessButton}
-          onPress={() => navigation.navigate("History")}
-        >
-        <Text style={styles.bodyAwarenessButtonText}>
-        BODY AWARENESS →
-          </Text>
-        </TouchableOpacity>
 
       </ScrollView>
     </View>
@@ -355,8 +364,10 @@ function ReadinessGauge({ value }) {
       </Svg>
 
       <View style={styles.gaugeCenter}>
-        <Text style={styles.gaugeValue}>{value}</Text>
-        <Text style={styles.gaugeTotal}>/100</Text>
+        <View style={styles.gaugeValueRow}>
+          <Text style={styles.gaugeValue}>{value}</Text>
+          <Text style={styles.gaugeTotal}>/100</Text>
+        </View>
         <Text style={[styles.gaugeLabel, { color: getReadinessStatus(value).color }]}>
           {getReadinessStatus(value).label}
         </Text>
@@ -372,15 +383,15 @@ function RadarCard({snapshot, dimensions}) {
     <View style={styles.card}>
       <View style={styles.radarHeaderRow}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.cardTitle}>2. DELTAS & CONSISTENCY</Text>
+          <Text style={styles.cardTitle}>2. SENSATION & REALITY</Text>
           <Text style={styles.cardSubtitle}>
-            Sensation vs true data
+            A DashBoard to compare how you Feel and the Insights from Sensors. 
           </Text>
         </View>
 
         <View style={styles.globalDeltaBox}>
-          <Text style={styles.globalDeltaLabel}>GLOBAL GAP</Text>
-          <Text style={[styles.globalDeltaValue, { color: gapStatus.color }]}>
+          <Text style={styles.globalDeltaLabel}>SIGNALS vs DATA</Text>
+          <Text style={styles.globalDeltaValue}>
             {formatSigned(snapshot.scores.global_gap)}
           </Text>
           <Text style={[styles.globalDeltaStatus, { color: gapStatus.color }]}>
@@ -404,12 +415,6 @@ function RadarCard({snapshot, dimensions}) {
 
       <RadarChart data={dimensions} />
 
-      <View style={styles.readingBox}>
-        <Text style={styles.readingTitle}>HOW TO READ SIGNALS VS DATA</Text>
-        <Text style={styles.readingText}>
-          🟢 &gt; 20                    ⚪ -20 à +20           🔴 &lt; -20
-        </Text>
-      </View>
     </View>
   );
 }
@@ -575,10 +580,6 @@ const styles = StyleSheet.create({
   container: {
     padding: 18,
     paddingBottom: 24,
-  },
-
-  header: {
-    marginBottom: 12,
   },
 
   title: {
@@ -802,7 +803,7 @@ const styles = StyleSheet.create({
 
   globalDeltaLabel: {
     color: "#cbd5e1",
-    fontSize: 9,
+    fontSize: 12,
     fontWeight: "800",
   },
 
@@ -1002,5 +1003,66 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: "800",
         letterSpacing: 0.5,
+      },
+
+      topBar: {
+        height: 72,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 10,
+      },
+      
+      backContainer: {
+        width: 90,
+        paddingLeft: 10,
+        justifyContent: "center",
+      },
+      
+      back: {
+        color: "#F5F5F5",
+        fontSize: 34,
+        fontWeight: "300",
+      },
+      
+      headerCenter: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      
+      headerTitle: {
+        color: "#F5F5F5",
+        fontSize: 22,
+        fontWeight: "900",
+        letterSpacing: 1.2,
+        marginTop: 10,
+      },
+      
+      historyTopButton: {
+        width: 150,
+        height: 48,
+        marginRight: 10,
+        borderRadius: 16,
+        backgroundColor: "#FF8500",
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      
+      historyTopButtonText: {
+        color: "#031018",
+        fontSize: 13,
+        fontWeight: "900",
+        textTransform: "uppercase",
+      },
+      gaugeValueRow: {
+        flexDirection: "row",
+        alignItems: "flex-end",
+      },
+      gaugeTotal: {
+        color: "#cbd5e1",
+        fontSize: 13,
+        marginBottom: 7,
+        marginLeft: 2,
       },
 });

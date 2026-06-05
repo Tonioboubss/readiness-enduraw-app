@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,11 +11,12 @@ import {
 import SignalCard from "../components/SignalCard";
 import { submitDailyCheckin } from "../services/dailyworkflowService";
 import ProgressSteps from "../components/ProgressSteps";
+import { getTodayAnswers } from "../services/answerService";
 
 export default function CheckInScreen2({ navigation, route }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const checkin1Answers = route?.params?.checkin1Answers || [];
-
+  const readOnly = route?.params?.readOnly || false;
   const cardWidth = "23.5%";
 
   const [answers, setAnswers] = useState({
@@ -153,6 +154,10 @@ export default function CheckInScreen2({ navigation, route }) {
   ];
 
   const handleContinue = async () => {
+    if (readOnly) {
+      navigation.navigate("DailyPrint");
+      return;
+    }
     try {
       setIsSubmitting(true);
   
@@ -239,11 +244,11 @@ export default function CheckInScreen2({ navigation, route }) {
       const allAnswers = [...checkin1Answers, ...checkin2Answers];
   
       const result = await submitDailyCheckin(allAnswers);
-  
       navigation.navigate("DailyPrint", {
         checkinId: result.checkin.id,
         snapshot: result.snapshot.snapshot_json,
       });
+
     } catch (error) {
       console.log("SUBMIT DAILY CHECKIN ERROR:", error);
       alert(error?.message || "Unable to submit daily check-in.");
@@ -252,14 +257,59 @@ export default function CheckInScreen2({ navigation, route }) {
     }
   };
 
+  useEffect(() => {
+    if (readOnly) {
+      loadReadonlyAnswers();
+    }
+  }, [readOnly]);
+  
+  const loadReadonlyAnswers = async () => {
+    try {
+      const savedAnswers = await getTodayAnswers();
+  
+      const map = {
+        wake_quality: "wakeUpQuality",
+        recovery_sensation: "recoveryCompleteness",
+        connection_close_ones: "socialConnection",
+        willingness_to_go_out: "spontaneousMovement",
+        natural_posture: "bodyFreedom",
+        stress: "nervousSystemState",
+        coordination: "motorFluency",
+        satisfaction_yesterday: "yesterdayFulfilment",
+        projection_session: "sessionAnticipation",
+        ambition: "competitiveDrive",
+        hormonal: "hormonalBalance",
+      };
+  
+      const nextAnswers = { ...answers };
+  
+      savedAnswers.forEach((answer) => {
+        const stateKey = map[answer.signal_key];
+  
+        if (stateKey) {
+          nextAnswers[stateKey] = Number(answer.value_number);
+        }
+      });
+  
+      setAnswers(nextAnswers);
+    } catch (error) {
+      console.log("LOAD CHECKIN2 READONLY ERROR:", error);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
       <View style={styles.topBar}>
-        <Pressable style={styles.backContainer}
-          onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>←</Text>
-        </Pressable>
+      <Pressable
+        style={styles.backContainer}
+        onPress={() =>
+          navigation.navigate("CheckIn1", {
+            readOnly,
+          })}
+      >
+        <Text style={styles.back}>←</Text>
+      </Pressable>
 
         <View style={styles.headerCenter}>
           <Text style={styles.header}>MORNING CHECK-IN</Text>
@@ -273,7 +323,11 @@ export default function CheckInScreen2({ navigation, route }) {
           disabled={isSubmitting}
         >
           <Text style={styles.validateTopButtonText}>
-            {isSubmitting ? "..." : "GET FOOTPRINT"}
+            {readOnly
+              ? "VIEW FOOTPRINT"
+              : isSubmitting
+              ? "GENERATING..."
+              : "GENERATE FOOTPRINT"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -292,6 +346,7 @@ export default function CheckInScreen2({ navigation, route }) {
                 value={answers[signal.key]}
                 cardWidth={cardWidth}
                 variant={signal.variant}
+                disabled={readOnly}
                 onChange={(value) => updateAnswer(signal.key, value)}
               />
             ))}

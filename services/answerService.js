@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { getTodayCheckin } from "./checkinService";
 
 /**
  * Sauvegarde plusieurs réponses.
@@ -47,4 +48,23 @@ export async function getAnswers(checkinId) {
   }
 
   return data;
+}
+
+export async function getTodayAnswers() {
+  const checkin = await getTodayCheckin();
+
+  if (!checkin) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("checkin_answers")
+    .select("*")
+    .eq("checkin_id", checkin.id);
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
 }

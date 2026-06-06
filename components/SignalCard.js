@@ -177,10 +177,10 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   hormonalCard: {
-    backgroundColor: "#15110B",
-  borderColor: "rgba(255,133,0,0.22)",
+    backgroundColor: "#19140E",
+    borderColor: "rgba(255,133,0,0.30)",
     shadowColor: "#FF8500",
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.35,
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 0 },
     elevation: 6,

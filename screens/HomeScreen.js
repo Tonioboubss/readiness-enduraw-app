@@ -62,39 +62,37 @@ export default function HomeScreen({ navigation }) {
         </Text>
 
         {!isLoadingCheckin && !hasCompletedToday && (
-  <TouchableOpacity
-    style={styles.primaryButton}
-    onPress={() => navigation.navigate("CheckIn1", {readOnly: true,})}
-  >
-    <Text style={styles.primaryButtonText}>
-      Start Morning check-in
-    </Text>
-  </TouchableOpacity>
-)}
+        <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={() => navigation.replace("CheckIn1", {readOnly: false,})}>
+            <Text style={styles.primaryButtonText}>Start Morning check-in</Text>
+        </TouchableOpacity>
+      )}
 
-{!isLoadingCheckin && hasCompletedToday && (
-  <TouchableOpacity
-    style={styles.primaryButton}
-    onPress={() =>
-      navigation.navigate("DailyPrint", {
-        checkinId: todayCheckin.id,
-      })
-    }
-  >
-    <Text style={styles.primaryButtonText}>
-      View Today's Daily Print
-    </Text>
-  </TouchableOpacity>
-)}
+      {!isLoadingCheckin && hasCompletedToday && (
+        
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() =>
+            navigation.navigate("DailyPrint", {
+              checkinId: todayCheckin.id,
+            })
+          }
+        >
+        <Text style={styles.primaryButtonText}>
+          View Today's Daily Print
+        </Text>
+        </TouchableOpacity>
+      )}
 
-<TouchableOpacity
-  style={styles.secondaryButton}
-  onPress={() => navigation.navigate("History")}
->
-  <Text style={styles.secondaryButtonText}>
-    Check history
-  </Text>
-</TouchableOpacity>
+      <TouchableOpacity
+        style={styles.secondaryButton}
+        onPress={() => navigation.navigate("History")}
+      >
+        <Text style={styles.secondaryButtonText}>
+          Check history
+        </Text>
+      </TouchableOpacity>
       </View>
     </View>
   );

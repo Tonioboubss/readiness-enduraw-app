@@ -16,10 +16,14 @@ import { getTodayAnswers } from "../services/answerService";
 export default function CheckInScreen2({ navigation, route }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const checkin1Answers = route?.params?.checkin1Answers || [];
-  const readOnly = route?.params?.readOnly || false;
+  const readOnly = route?.params?.readOnly === true;
+  const checkin1Values = route?.params?.checkin1Values || null;
+  const checkin2Values = route?.params?.checkin2Values || null;
+
   const cardWidth = "23.5%";
 
-  const [answers, setAnswers] = useState({
+  const [answers, setAnswers] = useState(
+    checkin2Values || {
     wakeUpQuality: null,
     recoveryCompleteness: null,
     socialConnection: null,
@@ -257,11 +261,19 @@ export default function CheckInScreen2({ navigation, route }) {
     }
   };
 
+  // Gestion mode readonly
   useEffect(() => {
     if (readOnly) {
       loadReadonlyAnswers();
     }
   }, [readOnly]);
+
+  // Restauration valeurs temporaires page 2
+  useEffect(() => {
+    if (route?.params?.checkin2Values) {
+      setAnswers(route.params.checkin2Values);
+    }
+  }, [route?.params?.checkin2Values]);
   
   const loadReadonlyAnswers = async () => {
     try {
@@ -305,7 +317,9 @@ export default function CheckInScreen2({ navigation, route }) {
         style={styles.backContainer}
         onPress={() =>
           navigation.navigate("CheckIn1", {
-            readOnly,
+            readOnly, // reste dans le même flux
+            checkin1Values,
+            checkin2Values: answers,
           })}
       >
         <Text style={styles.back}>←</Text>
@@ -374,6 +388,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#05070A",
+    paddingVertical: 2,
+    paddingHorizontal: 20,
   },
 
   content: {
@@ -469,7 +485,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 8,
+    marginBottom: 5,
+    marginTop: 17,
   },
   
   back: {

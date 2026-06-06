@@ -19,18 +19,31 @@ import ProgressSteps from "../components/ProgressSteps";
 import { getTodayAnswers } from "../services/answerService";
 
 export default function CheckInScreen1({ navigation, route }) {
-  const readOnly = route?.params?.readOnly || false;
+  const readOnly = route?.params?.readOnly === true;
 
-  const [energy, setEnergy] = useState(72);
-  const [mental, setMental] = useState(66);
-  const [physicalAptitude, setPhysicalAptitude] = useState(73);
-  const [confidence, setConfidence] = useState(70);
+  const [energy, setEnergy] = useState(route?.params?.checkin1Values?.energy ?? null);
+  const [mental, setMental] = useState(route?.params?.checkin1Values?.mental ?? null);
+  const [physicalAptitude, setPhysicalAptitude] = useState(route?.params?.checkin1Values?.physicalAptitude ?? null);
+  const [confidence, setConfidence] = useState(route?.params?.checkin1Values?.confidence ?? null);
+
+  const checkin2Values = route?.params?.checkin2Values || null;
+
+  useEffect(() => {
+    const values = route?.params?.checkin1Values;
+  
+    if (!readOnly && values) {
+      setEnergy(values.energy ?? null);
+      setMental(values.mental ?? null);
+      setPhysicalAptitude(values.physicalAptitude ?? null);
+      setConfidence(values.confidence ?? null);
+    }
+  }, [route?.params?.checkin1Values]);
 
   useEffect(() => {
     if (readOnly) {
       loadReadonlyAnswers();
     }
-  }, [readOnly]);
+    }, [readOnly]);
 
   const loadReadonlyAnswers = async () => {
     try {
@@ -50,9 +63,20 @@ export default function CheckInScreen1({ navigation, route }) {
     }
   };
 
-  const score = Math.round(
-    (energy + mental + physicalAptitude + confidence) / 4
-  );
+  const validValues = [
+    energy,
+    mental,
+    physicalAptitude,
+    confidence,
+  ].filter((value) => value !== null);
+
+  const score =
+  validValues.length > 0
+    ? Math.round(
+        validValues.reduce((sum, value) => sum + value, 0) /
+          validValues.length
+      )
+    : null;
 
   const goToCheckIn2 = () => {
     if (readOnly) {
@@ -63,6 +87,14 @@ export default function CheckInScreen1({ navigation, route }) {
     }
 
     navigation.navigate("CheckIn2", {
+      readOnly: false,
+      checkin1Values: {
+        energy,
+        mental,
+        physicalAptitude,
+        confidence,
+      },
+      checkin2Values,
       checkin1Answers: [
         {
           signal_key: "energy",
@@ -151,7 +183,7 @@ export default function CheckInScreen1({ navigation, route }) {
         </View>
 
         <Text style={styles.score}>
-          {score}
+          {score ?? "--"}
           <Text style={styles.scoreMax}>/100</Text>
         </Text>
       </View>
@@ -218,17 +250,21 @@ function EnergyCard({ energy, setEnergy, disabled }) {
         <View style={styles.batteryCap} />
 
         <View style={styles.batteryShell}>
-          <View style={[styles.batteryFill, { height: `${energy}%` }]} />
+          <View style={[styles.batteryFill, { height: `${energy ?? 0}%` }]} />
 
+          {energy !== null && (
+            <>
           <View
             style={[
               styles.batteryHandle,
               { bottom: `${Math.max(0, Math.min(energy, 96))}%` },
             ]}
           />
-
           <Text style={styles.batteryPercent}>{Math.round(energy)}%</Text>
+          </>
+          )}
         </View>
+
       </View>
     </View>
   );
@@ -241,16 +277,8 @@ function MentalCard({ mental, setMental, disabled }) {
 
   const [markerPosition, setMarkerPosition] = useState({
     x: center,
-    y: center - ((100 - mental) / 100) * maxRadius,
+    y: center,
   });
-
-  useEffect(() => {
-    const distance = ((100 - mental) / 100) * maxRadius;
-    setMarkerPosition({
-      x: center,
-      y: center - distance,
-    });
-  }, [mental]);
 
   const getMentalWord = (value) => {
     if (value >= 80) return "FOCUSED";
@@ -262,27 +290,34 @@ function MentalCard({ mental, setMental, disabled }) {
 
   const updateMentalFromTouch = (x, y) => {
     if (disabled) return;
-
+  
     const dx = x - center;
     const dy = y - center;
     const distance = Math.sqrt(dx * dx + dy * dy);
-
+  
     const clampedDistance = Math.min(distance, maxRadius);
-    const angle = Math.atan2(dy, dx);
-
-    const markerX = center + Math.cos(angle) * clampedDistance;
-    const markerY = center + Math.sin(angle) * clampedDistance;
-
-    let newValue = Math.round(100 - (clampedDistance / maxRadius) * 100);
-
+  
+    let markerX = x;
+    let markerY = y;
+  
+    if (distance > maxRadius) {
+      const angle = Math.atan2(dy, dx);
+      markerX = center + Math.cos(angle) * maxRadius;
+      markerY = center + Math.sin(angle) * maxRadius;
+    }
+  
+    let newValue = Math.round(
+      100 - (clampedDistance / maxRadius) * 100
+    );
+  
     if (newValue >= 95) newValue = 100;
     if (newValue <= 5) newValue = 0;
-
+  
     setMarkerPosition({
       x: markerX,
       y: markerY,
     });
-
+  
     setMental(newValue);
   };
 
@@ -309,8 +344,9 @@ function MentalCard({ mental, setMental, disabled }) {
     <View style={[styles.verticalCard, disabled && styles.disabledCard]}>
       <Text style={styles.cardTitleSmall}>2. MENTAL AVAILABILITY</Text>
       <Text style={styles.questionSmall}>Where is your attention today?</Text>
-
-      <Text style={styles.mentalWord}>{getMentalWord(mental)}</Text>
+      
+      {mental !== null && (
+      <Text style={styles.mentalWord}>{getMentalWord(mental)}</Text>)}
 
       <View style={styles.targetZone} {...panResponder.panHandlers}>
         <Svg
@@ -346,7 +382,9 @@ function MentalCard({ mental, setMental, disabled }) {
 
           <Circle cx={center} cy={center} r="16" fill="#FF7A00" opacity="0.22" />
           <Circle cx={center} cy={center} r="7" fill="#FF7A00" opacity="0.95" />
-
+          
+          {mental !== null && (
+            <>
           <Circle
             cx={markerPosition.x}
             cy={markerPosition.y}
@@ -373,7 +411,8 @@ function MentalCard({ mental, setMental, disabled }) {
           >
             {`${Math.round(mental)}%`}
           </SvgText>
-        </Svg>
+        </> )}
+        </ Svg>
       </View>
     </View>
   );
@@ -444,14 +483,18 @@ function MountainCard({ value, onValueChange, disabled }) {
     })
   ).current;
 
-  const marker = ridgePoints.reduce((closest, point) => {
-    const pointValue = getValueFromPoint(point);
-    const closestValue = getValueFromPoint(closest);
+  const marker =
+  value !== null
+    ? ridgePoints.reduce((closest, point) => {
+        const pointValue = getValueFromPoint(point);
+        const closestValue = getValueFromPoint(closest);
 
-    return Math.abs(pointValue - value) < Math.abs(closestValue - value)
-      ? point
-      : closest;
-  }, ridgePoints[0]);
+        return Math.abs(pointValue - value) <
+          Math.abs(closestValue - value)
+          ? point
+          : closest;
+      }, ridgePoints[0])
+    : null;
 
   const getTrailPlace = (value) => {
     if (value < 20) return "Annecy Lake";
@@ -493,6 +536,8 @@ function MountainCard({ value, onValueChange, disabled }) {
             fill="none"
           />
 
+          {marker !== null && (
+            <>
           <Circle
             cx={marker.x}
             cy={marker.y}
@@ -513,10 +558,14 @@ function MountainCard({ value, onValueChange, disabled }) {
           >
             {`${Math.round(value)}%`}
           </SvgText>
+          </>
+          )}
         </Svg>
       </View>
 
+      {value !== null && (
       <Text style={styles.trailPlace}>{getTrailPlace(value)}</Text>
+      )}
     </View>
   );
 }
@@ -545,9 +594,10 @@ function SunConfidenceCard({ value, onValueChange, disabled }) {
     })
   ).current;
 
-  const opacity = 0.25 + value / 135;
-  const rayLength = 18 + value * 0.28;
-  const sunRadius = 24 + value * 0.08;
+  const displayValue = value ?? 0;
+  const opacity = value === null ? 0.18 : 0.25 + displayValue / 135;
+  const rayLength = 18 + displayValue * 0.28;
+  const sunRadius = 24 + displayValue * 0.08;
 
   return (
     <View style={[styles.verticalCard, disabled && styles.disabledCard]}>
@@ -585,28 +635,33 @@ function SunConfidenceCard({ value, onValueChange, disabled }) {
             opacity={opacity}
           />
 
-          <SvgText
-            x="65"
-            y="112"
-            fill="#FF8500"
-            fontSize="15"
-            fontWeight="bold"
-            textAnchor="middle"
-          >
-            {`${Math.round(value)}%`}
-          </SvgText>
         </Svg>
       </View>
 
       <View style={styles.confidenceSlider} {...panResponder.panHandlers}>
         <View style={styles.confidenceTrack} />
-        <View style={[styles.confidenceFill, { width: `${value}%` }]} />
+        {value !== null && (
+          <>
+        <View style={[styles.confidenceFill, { width: `${value ?? 0}%` }]} />
         <View
           style={[
             styles.confidenceThumb,
             { left: `${Math.max(0, Math.min(value, 96))}%` },
           ]}
+          
         />
+        <Text
+        style={[
+          styles.confidencePercent,
+          {
+            left: `${Math.max(0, Math.min(value, 92))}%`,
+          },
+        ]}
+      >
+        {`${Math.round(value)}%`}
+      </Text>
+        </>
+        )}
       </View>
     </View>
   );
@@ -890,5 +945,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "800",
     textAlign: "center",
+  },
+  confidencePercent: {
+    position: "absolute",
+    bottom: 22,
+    color: "#FF8500",
+    fontSize: 13,
+    fontWeight: "900",
+    marginLeft: -14,
   },
 });

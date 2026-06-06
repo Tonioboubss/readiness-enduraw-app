@@ -303,15 +303,10 @@ function DimensionRow({ item }) {
       </View>
 
       <View style={styles.scoreBlock}>
-        <Text
-          style={[
-            styles.dimensionScore,
-            item.score >= 70 ? styles.green : styles.orange,
-          ]}
-        >
-          {item.score}
-          <Text style={styles.small}> /100</Text>
-        </Text>
+      <Text style={styles.dimensionScore}>
+        {item.score}
+        <Text style={styles.small}> /100</Text>
+      </Text>
       </View>
 
       <View style={styles.trendBlock}>
@@ -407,13 +402,14 @@ function RadarCard({snapshot, dimensions}) {
 
       <CoherenceScale value={snapshot.scores.global_gap} />
 
-      <View style={styles.legend}>
-        <Text style={styles.legendItem}>● Signals</Text>
-        <Text style={styles.legendItemWhite}>- - Sensors</Text>
-        <Text style={styles.legendItemWhite}></Text>
-      </View>
+      <View style={styles.radarContentBlock}>
+        <View style={styles.legend}>
+          <Text style={styles.legendItem}>● Signals</Text>
+          <Text style={styles.legendItemWhite}>- - Sensors</Text>
+        </View>
 
-      <RadarChart data={dimensions} />
+        <RadarChart data={dimensions} />
+      </View>
 
     </View>
   );
@@ -565,7 +561,7 @@ function CoherenceScale({ value }) {
       <View style={styles.scaleLabels}>
         <Text style={styles.redLabel}>Strong under</Text>
         <Text style={styles.neutralLabel}>Aligned</Text>
-        <Text style={styles.blueLabel}>Strong over</Text>
+        <Text style={styles.greenLabel}>Strong over</Text>
       </View>
     </View>
   );
@@ -746,6 +742,7 @@ const styles = StyleSheet.create({
   },
 
   dimensionScore: {
+    color: "#ff8500",
     fontSize: 20,
     fontWeight: "900",
   },
@@ -822,8 +819,8 @@ const styles = StyleSheet.create({
   },
 
   coherenceMiniText: {
-    marginTop: 8,
-    marginBottom: 6,
+    marginTop: 14,
+    marginBottom: 16,
   },
 
   coherenceMiniTitle: {
@@ -836,6 +833,10 @@ const styles = StyleSheet.create({
     color: "#cbd5e1",
     fontSize: 12,
     marginTop: 3,
+  },
+
+  radarContentBlock: {
+    marginTop: 24,
   },
 
   scaleContainer: {
@@ -870,18 +871,18 @@ const styles = StyleSheet.create({
   
   softOverZone: {
     flex: 30,
-    backgroundColor: "#93c5fd",
+    backgroundColor: "#B7E778",
   },
   
   strongOverZone: {
     flex: 50,
-    backgroundColor: "#3b82f6",
+    backgroundColor: "#91D94F",
     borderTopRightRadius: 8,
     borderBottomRightRadius: 8,
   },
   
-  blueLabel: {
-    color: "#3b82f6",
+  greenLabel: {
+    color: "#91D94F",
     fontSize: 9,
   },
 
@@ -946,8 +947,9 @@ const styles = StyleSheet.create({
   legend: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
-    marginBottom: 4,
+    gap: 14,
+    marginBottom: 14,
+    justifyContent: "center",
   },
 
   legendItem: {
@@ -963,7 +965,7 @@ const styles = StyleSheet.create({
   radarWrapper: {
     alignItems: "center",
     justifyContent: "center",
-    height: 280,
+    height: 315,
   },
 
   readingBox: {

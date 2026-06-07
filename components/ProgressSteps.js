@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from "react-native";
-import { COLORS } from "../constants/theme";
+import { COLORS } from "../constants/theme.js";
 
 export default function ProgressSteps({ currentStep = 1 }) {
   return (

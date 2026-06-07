@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
-import { normalizePseudo } from "../services/sessionService";
+import { normalizePseudo } from "../services/sessionService.js";
 
 function toISODate(date) {
   return date.toISOString().split("T")[0];

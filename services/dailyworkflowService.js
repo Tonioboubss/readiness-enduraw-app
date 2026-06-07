@@ -9,7 +9,7 @@ import {
   getSensorObservationsByDate,
 } from "./sensorService";
 
-import { saveScore, getScores } from "./scoreService";
+import { saveScore, getScores } from "./scoreService.js";
 import { saveDailySnapshot } from "./snapshotService";
 import { getBodyHistory } from "./historyService";
 

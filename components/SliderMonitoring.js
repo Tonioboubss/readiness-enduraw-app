@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from "react-native";
 import Slider from "@react-native-community/slider";
-import { COLORS } from "../constants/theme";
+import { COLORS } from "../constants/theme.js";
 
 export default function SliderQuestion({
   label,

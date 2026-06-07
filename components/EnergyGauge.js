@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from "react-native";
 import Svg, { Circle } from "react-native-svg";
-import { COLORS } from "../constants/theme";
+import { COLORS } from "../constants/theme.js";
 
 export default function EnergyGauge({ value = 72 }) {
   const size = 150;

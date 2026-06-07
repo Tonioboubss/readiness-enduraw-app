@@ -47,7 +47,7 @@ export default function HomeScreen({ navigation }) {
           ? "Loading check-in..."
           : todayCheckin
           ? `Today check-in: ${todayCheckin.status}`
-          : "No check-in today"}
+          : "Not yet checked-in today"}
         </Text>
 
       <View style={styles.card}>

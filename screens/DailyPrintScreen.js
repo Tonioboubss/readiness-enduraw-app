@@ -9,7 +9,7 @@ const { width } = Dimensions.get("window");
 function getReadinessStatus(score) {
   if (score >= 75) {
     return {
-      label: "HIGH",
+      label: "OLYMPIC",
       color: "#91d94f",
       text: "Your body and mind look ready to perform.",
     };
@@ -17,7 +17,7 @@ function getReadinessStatus(score) {
 
   if (score >= 50) {
     return {
-      label: "MODERATE",
+      label: "CORRECT",
       color: "#ff8500",
       text: "You show a balanced but not optimal readiness state.",
     };
@@ -25,14 +25,14 @@ function getReadinessStatus(score) {
 
   if (score >= 25) {
     return {
-      label: "LOW",
+      label: "BAD DAY",
       color: "#ffb020",
       text: "Your readiness is limited today. Adjust intensity with care.",
     };
   }
 
   return {
-    label: "VERY LOW",
+    label: "BREAKDOWN",
     color: "#ff4b3e",
     text: "Your signals show a strong readiness limitation today.",
   };
@@ -373,26 +373,33 @@ function ReadinessGauge({ value }) {
 
 function RadarCard({snapshot, dimensions}) {
   const gapStatus = getGapStatus(snapshot.scores.global_gap);
+  const AbsgapStatus = getGapStatus(snapshot.scores.absolute_gap);
 
   return (
     <View style={styles.card}>
-      <View style={styles.radarHeaderRow}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.cardTitle}>2. SENSATION & REALITY</Text>
-          <Text style={styles.cardSubtitle}>
-            A DashBoard to compare how you Feel and the Insights from Sensors. 
-          </Text>
-        </View>
+      <View style={styles.radarHeaderText}>
+        <Text style={styles.cardTitle}>2. SENSATION & REALITY</Text>
+        <Text style={styles.cardSubtitle}>
+          A DashBoard to compare how you Feel and the Insights from Sensors.
+        </Text>
+      </View>
 
-        <View style={styles.globalDeltaBox}>
-          <Text style={styles.globalDeltaLabel}>SIGNALS vs DATA</Text>
-          <Text style={styles.globalDeltaValue}>
-            {formatSigned(snapshot.scores.global_gap)}
-          </Text>
-          <Text style={[styles.globalDeltaStatus, { color: gapStatus.color }]}>
-            {gapStatus.label}
-          </Text>
-        </View>
+      <View style={styles.metricCardsRow}>
+        <MetricGapCard
+          title="GLOBAL GAP"
+          value={formatSigned(snapshot.scores.global_gap)}
+          status={gapStatus.label}
+          statusColor={gapStatus.color}
+        />
+
+        <SensorReadinessCard value={snapshot.scores.sensor_readiness_score} />
+
+        <MetricGapCard
+          title="ABSOLUTE MEAN GAP"
+          value={snapshot.scores.absolute_gap}
+          status={gapStatus.label}
+          statusColor={gapStatus.color}
+        />
       </View>
 
       <View style={styles.coherenceMiniText}>
@@ -402,8 +409,8 @@ function RadarCard({snapshot, dimensions}) {
 
       <CoherenceScale value={snapshot.scores.global_gap} />
 
-      <View style={styles.radarContentBlock}>
-        <View style={styles.legend}>
+      <View style={styles.radarRow}>
+        <View style={styles.legendSide}>
           <Text style={styles.legendItem}>● Signals</Text>
           <Text style={styles.legendItemWhite}>- - Sensors</Text>
         </View>
@@ -438,6 +445,7 @@ function RadarChart({ data }) {
         return `${p.x},${p.y}`;
       })
       .join(" ");
+      
 
   return (
     <View style={styles.radarWrapper}>
@@ -559,10 +567,45 @@ function CoherenceScale({ value }) {
       </View>
 
       <View style={styles.scaleLabels}>
-        <Text style={styles.redLabel}>Strong under</Text>
+        <Text style={styles.redLabel}>Data &gt; Signals</Text>
         <Text style={styles.neutralLabel}>Aligned</Text>
-        <Text style={styles.greenLabel}>Strong over</Text>
+        <Text style={styles.greenLabel}>Signals &gt; Data</Text>
       </View>
+    </View>
+  );
+}
+
+function MetricGapCard({
+  title,
+  value,
+  status,
+  statusColor,
+  valueColor = "#ffffff",
+}) {
+  return (
+    <View style={styles.metricCard}>
+      <Text style={styles.metricTitle}>{title}</Text>
+      <Text style={[styles.metricValue, { color: valueColor }]}>
+        {value}
+      </Text>
+      <Text style={[styles.metricStatus, { color: statusColor }]}>
+        {status}
+      </Text>
+    </View>
+  );
+}
+
+function SensorReadinessCard({ value }) {
+  const status = getReadinessStatus(value);
+
+  return (
+    <View style={[styles.metricCard, styles.sensorMetricCard]}>
+      <Text style={styles.metricTitle}>SENSOR READINESS INDEX</Text>
+
+      <ReadinessGauge value={value} />
+
+      <Text style={[styles.metricStatus, { color: status.color }]}>
+      </Text>
     </View>
   );
 }
@@ -591,21 +634,21 @@ const styles = StyleSheet.create({
   },
 
   layout: {
-        flexDirection: "row",
-        gap: 12,
-        alignItems: "stretch",
-        width: "100%",
-      },
-      
-      leftColumn: {
-        flex: 0.95,
-        minWidth: 0,
-      },
-      
-      rightColumn: {
-        flex: 1.35,
-        minWidth: 0,
-      },
+    flexDirection: "row",
+    gap: 12,
+    alignItems: "stretch",
+    width: "100%",
+  },
+  
+  leftColumn: {
+    flex: 0.95,
+    minWidth: 0,
+  },
+  
+  rightColumn: {
+    flex: 1.35,
+    minWidth: 0,
+  },
 
   card: {
     backgroundColor: "#06121d",
@@ -819,8 +862,8 @@ const styles = StyleSheet.create({
   },
 
   coherenceMiniText: {
-    marginTop: 14,
-    marginBottom: 16,
+    marginTop: 4,
+    marginBottom: 4,
   },
 
   coherenceMiniTitle: {
@@ -836,12 +879,12 @@ const styles = StyleSheet.create({
   },
 
   radarContentBlock: {
-    marginTop: 24,
+    marginTop: 1,
   },
 
   scaleContainer: {
     width: "100%",
-    marginTop: 10,
+    marginTop: 40,
     marginBottom: 12,
   },
 
@@ -945,27 +988,39 @@ const styles = StyleSheet.create({
   },
 
   legend: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 14,
+    flexDirection: "flex-end",
+    gap: 12,
     marginBottom: 14,
     justifyContent: "center",
+  },
+
+  legendSide: {
+    width: 90,
+    marginRight: 8,
+    alignItems: "flex-start",
   },
 
   legendItem: {
     color: "#ff8500",
     fontSize: 11,
+    marginBottom: 2,
   },
-
+  
   legendItemWhite: {
     color: "#f8fafc",
     fontSize: 11,
   },
 
+  radarRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
   radarWrapper: {
     alignItems: "center",
     justifyContent: "center",
-    height: 315,
+    height: 250,
   },
 
   readingBox: {
@@ -1066,5 +1121,58 @@ const styles = StyleSheet.create({
         fontSize: 13,
         marginBottom: 7,
         marginLeft: 2,
+      },
+
+      radarHeaderText: {
+        marginBottom: 1,
+      },
+      
+      metricCardsRow: {
+        flexDirection: "row",
+        height: 190,
+        gap: 10,
+        marginTop: 4,
+        marginBottom: 4,
+      },
+      
+      metricCard: {
+        flex: 1,
+        minHeight: 128,
+        borderWidth: 1,
+        borderColor: "#334155",
+        borderRadius: 18,
+        backgroundColor: "rgba(255,255,255,0.025)",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 10,
+      },
+      
+      sensorMetricCard: {
+        flex: 1.35,
+      },
+      
+      metricTitle: {
+        color: "#f8fafc",
+        fontSize: 11,
+        fontWeight: "900",
+        textAlign: "center",
+        textTransform: "uppercase",
+        marginBottom: 6,
+      },
+      
+      metricValue: {
+        color: "#ffffff",
+        fontSize: 38,
+        fontWeight: "900",
+        lineHeight: 42,
+      },
+      
+      metricStatus: {
+        color: "#cbd5e1",
+        fontSize: 11,
+        fontWeight: "900",
+        textAlign: "center",
+        textTransform: "uppercase",
+        marginTop: 4,
       },
 });

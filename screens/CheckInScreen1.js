@@ -176,9 +176,9 @@ export default function CheckInScreen1({ navigation, route }) {
 
       <View style={styles.scoreCard}>
         <View>
-          <Text style={styles.scoreTitle}>TODAY’S SCORE</Text>
+          <Text style={styles.scoreTitle}>TODAY READINESS SCORE</Text>
           <Text style={styles.scoreSub}>
-            Average of your main signals
+            Average of your 4 Main Signals.
           </Text>
         </View>
 

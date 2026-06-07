@@ -1,16 +1,23 @@
-import { createTodayCheckin,createCheckinByPseudoAndDate, completeCheckin } from "./checkinService";
+import {
+  createCheckinByPseudoAndDate,
+  completeCheckin,
+} from "./checkinService";
+
 import { saveAnswers, getAnswers } from "./answerService";
-import { saveSensorObservations, getTodaySensorObservations,getSensorObservationsByDate,} from "./sensorService";
+import {
+  saveSensorObservations,
+  getSensorObservationsByDate,
+} from "./sensorService";
+
 import { saveScore, getScores } from "./scoreService";
 import { saveDailySnapshot } from "./snapshotService";
 import { getBodyHistory } from "./historyService";
 
 import { generateMockSensorData } from "../utils/mockSensorGenerator";
 import { calculateReadinessScore } from "../utils/readinessCalculator";
-import { calculatePerceptionGapScore } from "../utils/perceptionGapCalculator";
 import { calculateBodyAwarenessScore } from "../utils/bodyAwarenessCalculator";
 import { buildDailySnapshot } from "../utils/snapshotBuilder";
-import { calculateReadinessDimensions,} from "../utils/readinessDimensionsCalculator";
+import { calculateReadinessDimensions } from "../utils/readinessDimensionsCalculator";
 import { calculateSensorDimensionProxies } from "../utils/sensorDimensionProxyCalculator";
 import { calculatePerceptionGapAnalysis } from "../utils/perceptionGapCalculator";
 import { calculateSensorReadinessScore } from "../utils/sensorReadinessCalculator";
@@ -20,13 +27,17 @@ export async function submitDailyCheckin(rawAnswers, session = null) {
     throw new Error("submitDailyCheckin requires at least one answer.");
   }
 
-  const checkin =
-  session?.pseudo && session?.checkinDate
-    ? await createCheckinByPseudoAndDate(
-        session.pseudo,
-        session.checkinDate
-      )
-    : await createTodayCheckin();
+  if (!session?.pseudo || !session?.checkinDate) {
+    throw new Error("Missing pseudo or check-in date.");
+  }
+
+  const pseudo = session.pseudo.trim().toLowerCase();
+  const checkinDate = session.checkinDate;
+
+  const checkin = await createCheckinByPseudoAndDate(
+    pseudo,
+    checkinDate
+  );
 
   if (checkin.status === "completed" || checkin.locked_at) {
     throw new Error("This check-in is already completed and locked.");
@@ -37,19 +48,26 @@ export async function submitDailyCheckin(rawAnswers, session = null) {
   const savedAnswers = await getAnswers(checkin.id);
 
   const mockSensors = generateMockSensorData();
-  await saveSensorObservations(mockSensors);
 
-  const sensorObservations =
-  session?.checkinDate
-    ? await getSensorObservationsByDate(session.checkinDate)
-    : await getTodaySensorObservations();
+  await saveSensorObservations(
+    mockSensors,
+    pseudo,
+    checkinDate
+  );
+
+  const sensorObservations = await getSensorObservationsByDate(
+    checkinDate,
+    pseudo
+  );
 
   const dimensions = calculateReadinessDimensions(savedAnswers);
 
   const readinessScore = calculateReadinessScore(dimensions);
 
   const sensorAxes = calculateSensorDimensionProxies(sensorObservations);
-  const sensorReadinessScore = calculateSensorReadinessScore(sensorAxes);
+
+  const sensorReadinessScore =
+    calculateSensorReadinessScore(sensorAxes);
 
   const perceptionGapAnalysis = calculatePerceptionGapAnalysis(
     dimensions,
@@ -71,7 +89,10 @@ export async function submitDailyCheckin(rawAnswers, session = null) {
     score_version: "v1",
   });
 
-  const historyBeforeBodyAwareness = await getBodyHistory(30);
+  const historyBeforeBodyAwareness = await getBodyHistory(
+    30,
+    pseudo
+  );
 
   const bodyAwarenessScore = calculateBodyAwarenessScore(
     historyBeforeBodyAwareness
@@ -86,11 +107,14 @@ export async function submitDailyCheckin(rawAnswers, session = null) {
 
   const scores = await getScores(checkin.id);
 
-  const snapshot = buildDailySnapshot({scores, dimensions, sensorAxes, perceptionGapAnalysis});
-  console.log(
-    "DAILY SNAPSHOT",
-    JSON.stringify(snapshot, null, 2)
-  );
+  const snapshot = buildDailySnapshot({
+    scores,
+    dimensions,
+    sensorAxes,
+    perceptionGapAnalysis,
+  });
+
+  console.log("DAILY SNAPSHOT", JSON.stringify(snapshot, null, 2));
 
   const savedSnapshot = await saveDailySnapshot(checkin.id, snapshot);
 

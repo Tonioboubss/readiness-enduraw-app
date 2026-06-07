@@ -1,6 +1,6 @@
-import { createTodayCheckin, completeCheckin } from "./checkinService";
+import { createTodayCheckin,createCheckinByPseudoAndDate, completeCheckin } from "./checkinService";
 import { saveAnswers, getAnswers } from "./answerService";
-import { saveSensorObservations, getTodaySensorObservations,} from "./sensorService";
+import { saveSensorObservations, getTodaySensorObservations,getSensorObservationsByDate,} from "./sensorService";
 import { saveScore, getScores } from "./scoreService";
 import { saveDailySnapshot } from "./snapshotService";
 import { getBodyHistory } from "./historyService";
@@ -15,15 +15,21 @@ import { calculateSensorDimensionProxies } from "../utils/sensorDimensionProxyCa
 import { calculatePerceptionGapAnalysis } from "../utils/perceptionGapCalculator";
 import { calculateSensorReadinessScore } from "../utils/sensorReadinessCalculator";
 
-export async function submitDailyCheckin(rawAnswers) {
+export async function submitDailyCheckin(rawAnswers, session = null) {
   if (!Array.isArray(rawAnswers) || rawAnswers.length === 0) {
     throw new Error("submitDailyCheckin requires at least one answer.");
   }
 
-  const checkin = await createTodayCheckin();
+  const checkin =
+  session?.pseudo && session?.checkinDate
+    ? await createCheckinByPseudoAndDate(
+        session.pseudo,
+        session.checkinDate
+      )
+    : await createTodayCheckin();
 
   if (checkin.status === "completed" || checkin.locked_at) {
-    throw new Error("Today's check-in is already completed and locked.");
+    throw new Error("This check-in is already completed and locked.");
   }
 
   await saveAnswers(checkin.id, rawAnswers);
@@ -33,7 +39,10 @@ export async function submitDailyCheckin(rawAnswers) {
   const mockSensors = generateMockSensorData();
   await saveSensorObservations(mockSensors);
 
-  const sensorObservations = await getTodaySensorObservations();
+  const sensorObservations =
+  session?.checkinDate
+    ? await getSensorObservationsByDate(session.checkinDate)
+    : await getTodaySensorObservations();
 
   const dimensions = calculateReadinessDimensions(savedAnswers);
 

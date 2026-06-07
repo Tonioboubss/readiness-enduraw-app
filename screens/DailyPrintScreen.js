@@ -2,7 +2,12 @@ import {View,Text,StyleSheet,ScrollView,Dimensions,TouchableOpacity,Pressable} f
 import Svg, { Circle, Polygon, Line, Text as SvgText } from "react-native-svg";
 
 import React, { useEffect, useState } from "react";
-import { getTodaySnapshot, getYesterdaySnapshot } from "../services/historyService";
+import {
+  getSnapshotByCheckinId,
+  getPreviousSnapshotByPseudoAndDate,
+  getSnapshotByPseudoAndDate
+} from "../services/historyService";
+
 import ProgressSteps from "../components/ProgressSteps";
 
 const { width } = Dimensions.get("window");
@@ -11,7 +16,7 @@ function getReadinessStatus(score) {
     return {
       label: "OLYMPIC",
       color: "#91d94f",
-      text: "Your body and mind look ready to perform.",
+      text: "Your body and mind seems ready to perform.",
     };
   }
 
@@ -61,7 +66,7 @@ function getGapStatus(gap) {
     return {
       label: "Aligned",
       color: "#cbd5e1",
-      title: "Your perception and sensors are aligned today.",
+      title: "Your perception and sensors data are aligned today.",
       desc: "Your subjective signals match your current objective data quite well.",
     };
   }
@@ -88,26 +93,52 @@ function formatSigned(value) {
   return value > 0 ? `+${value}` : `${value}`;
 }
 
-export default function DailyPrintScreen({ navigation, route }) {
+export default function DailyPrintScreen({ navigation, route, session }) {
   const initialSnapshot = route?.params?.snapshot || null;
+
   const [snapshot, setSnapshot] = useState(initialSnapshot);
   const [yesterdaySnapshot, setYesterdaySnapshot] = useState(null);
 
   useEffect(() => {
-      loadSnapshot();
-  }, []);
+    loadSnapshot();
+  }, [
+    route?.params?.checkinId,
+    route?.params?.snapshot,
+    session?.pseudo,
+    session?.checkinDate,
+  ]);
 
   async function loadSnapshot() {
     try {
-      const data = await getTodaySnapshot();
-      console.log("TODAY SNAPSHOT", JSON.stringify(data, null, 2));
-      setSnapshot(data);
-      const today = await getTodaySnapshot();
-      const yesterday = await getYesterdaySnapshot();
-      console.log("YESTERDAY SNAPSHOT",
-        JSON.stringify(yesterday, null, 2));
-      setSnapshot(today);
-      setYesterdaySnapshot(yesterday);
+      const checkinId = route?.params?.checkinId;
+      const pseudo = session?.pseudo || route?.params?.pseudo;
+      const checkinDate = session?.checkinDate || route?.params?.checkinDate;
+
+      console.log("DAILY PRINT LOAD:", {
+        checkinId,
+        pseudo,
+        checkinDate,
+      });
+
+      if (route?.params?.snapshot) {
+        setSnapshot(route.params.snapshot);
+      } else if (checkinId) {
+        const selectedSnapshot = await getSnapshotByCheckinId(checkinId);
+        setSnapshot(selectedSnapshot);
+      } else if (pseudo && checkinDate) {
+        const selectedSnapshot = await getSnapshotByPseudoAndDate(
+          pseudo,
+          checkinDate
+        );
+        setSnapshot(selectedSnapshot);
+      }
+
+      const previous = await getPreviousSnapshotByPseudoAndDate(
+        pseudo,
+        checkinDate
+      );
+
+      setYesterdaySnapshot(previous);
     } catch (error) {
       console.log("LOAD DAILY SNAPSHOT ERROR:", error);
     }
@@ -116,9 +147,7 @@ export default function DailyPrintScreen({ navigation, route }) {
   if (!snapshot) {
     return (
       <View style={styles.screen}>
-        <Text style={{ color: "white" }}>
-          Loading Daily Print...
-        </Text>
+        <Text style={{ color: "white" }}>Loading Daily Print...</Text>
       </View>
     );
   }
@@ -131,11 +160,11 @@ export default function DailyPrintScreen({ navigation, route }) {
       score: snapshot.readiness_axes.energy,
       sensor: snapshot.sensor_axes.energy,
       delta: snapshot.perception_gap.axes.energy.signed_gap,
-      yesterday:
-      yesterdaySnapshot ? snapshot.readiness_axes.energy -
-          yesterdaySnapshot.readiness_axes.energy : 0,
-      },
-  
+      yesterday: yesterdaySnapshot
+        ? snapshot.readiness_axes.energy -
+          yesterdaySnapshot.readiness_axes.energy
+        : 0,
+    },
     {
       label: "Recovery",
       shortLabel: "RECOVERY",
@@ -143,11 +172,11 @@ export default function DailyPrintScreen({ navigation, route }) {
       score: snapshot.readiness_axes.recovery,
       sensor: snapshot.sensor_axes.recovery,
       delta: snapshot.perception_gap.axes.recovery.signed_gap,
-      yesterday:
-      yesterdaySnapshot ? snapshot.readiness_axes.recovery -
-          yesterdaySnapshot.readiness_axes.recovery : 0,
-      },
-  
+      yesterday: yesterdaySnapshot
+        ? snapshot.readiness_axes.recovery -
+          yesterdaySnapshot.readiness_axes.recovery
+        : 0,
+    },
     {
       label: "Mental Availability",
       shortLabel: "MENTAL",
@@ -155,12 +184,11 @@ export default function DailyPrintScreen({ navigation, route }) {
       score: snapshot.readiness_axes.mental_availability,
       sensor: snapshot.sensor_axes.mental_availability,
       delta: snapshot.perception_gap.axes.mental_availability.signed_gap,
-      delta: snapshot.perception_gap.axes.mental_availability.signed_gap,
-      yesterday:
-      yesterdaySnapshot ? snapshot.readiness_axes.mental_availability -
-          yesterdaySnapshot.readiness_axes.mental_availability : 0,
-      },
-  
+      yesterday: yesterdaySnapshot
+        ? snapshot.readiness_axes.mental_availability -
+          yesterdaySnapshot.readiness_axes.mental_availability
+        : 0,
+    },
     {
       label: "Physical Aptitude",
       shortLabel: "PHYSICAL",
@@ -168,11 +196,11 @@ export default function DailyPrintScreen({ navigation, route }) {
       score: snapshot.readiness_axes.physical_aptitude,
       sensor: snapshot.sensor_axes.physical_aptitude,
       delta: snapshot.perception_gap.axes.physical_aptitude.signed_gap,
-      yesterday:
-      yesterdaySnapshot ? snapshot.readiness_axes.physical_aptitude -
-          yesterdaySnapshot.readiness_axes.physical_aptitude : 0,
-      },
-  
+      yesterday: yesterdaySnapshot
+        ? snapshot.readiness_axes.physical_aptitude -
+          yesterdaySnapshot.readiness_axes.physical_aptitude
+        : 0,
+    },
     {
       label: "Confidence",
       shortLabel: "CONFIDENCE",
@@ -180,11 +208,11 @@ export default function DailyPrintScreen({ navigation, route }) {
       score: snapshot.readiness_axes.confidence,
       sensor: snapshot.sensor_axes.confidence,
       delta: snapshot.perception_gap.axes.confidence.signed_gap,
-      yesterday:
-      yesterdaySnapshot ? snapshot.readiness_axes.confidence -
-          yesterdaySnapshot.readiness_axes.confidence : 0,
-      },
-  
+      yesterday: yesterdaySnapshot
+        ? snapshot.readiness_axes.confidence -
+          yesterdaySnapshot.readiness_axes.confidence
+        : 0,
+    },
     {
       label: "Ambition",
       shortLabel: "AMBITION",
@@ -192,25 +220,34 @@ export default function DailyPrintScreen({ navigation, route }) {
       score: snapshot.readiness_axes.ambition,
       sensor: snapshot.sensor_axes.ambition,
       delta: snapshot.perception_gap.axes.ambition.signed_gap,
-      yesterday:
-      yesterdaySnapshot ? snapshot.readiness_axes.ambition -
-          yesterdaySnapshot.readiness_axes.ambition : 0,
-      },
+      yesterday: yesterdaySnapshot
+        ? snapshot.readiness_axes.ambition -
+          yesterdaySnapshot.readiness_axes.ambition
+        : 0,
+    },
   ];
 
   const readinessDelta = yesterdaySnapshot
-  ? snapshot.scores.readiness_score -
-  yesterdaySnapshot.scores.readiness_score : 0;
+    ? snapshot.scores.readiness_score -
+      yesterdaySnapshot.scores.readiness_score
+    : 0;
 
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.topBar}>
-        <Pressable
-          style={styles.backContainer}
-          onPress={() => navigation.navigate("CheckIn2", { readOnly: true })}
-        >
-          <Text style={styles.back}>←</Text>
+        <View style={styles.topBar}>
+          <Pressable
+            style={styles.backContainer}
+            onPress={() =>
+              navigation.navigate("CheckIn2", {
+                readOnly: true,
+                pseudo: session?.pseudo || route?.params?.pseudo,
+                checkinDate:
+                  session?.checkinDate || route?.params?.checkinDate,
+              })
+            }
+          >
+            <Text style={styles.back}>←</Text>
           </Pressable>
 
           <View style={styles.headerCenter}>
@@ -218,29 +255,42 @@ export default function DailyPrintScreen({ navigation, route }) {
             <ProgressSteps currentStep={3} completedSteps={[1, 2, 3]} />
           </View>
 
-          <TouchableOpacity
-            activeOpacity={0.85}
-            style={styles.historyTopButton}
-            onPress={() => navigation.navigate("History")}
-          >
-            <Text style={styles.historyTopButtonText}>
-              HISTORY
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.topButtonsRow}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={styles.smallTopButton}
+              onPress={() => navigation.navigate("Home")}
+            >
+              <Text style={styles.historyTopButtonText}>HOME</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={styles.smallTopButton}
+              onPress={() =>
+                navigation.navigate("History", {
+                  pseudo: session?.pseudo || route?.params?.pseudo,
+                })
+              }
+            >
+              <Text style={styles.historyTopButtonText}>HISTORY</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.layout}>
           <View style={styles.leftColumn}>
-            <ReadinessCard snapshot={snapshot}
-            dimensions={dimensions}
-            readinessDelta={readinessDelta}/>
+            <ReadinessCard
+              snapshot={snapshot}
+              dimensions={dimensions}
+              readinessDelta={readinessDelta}
+            />
           </View>
 
           <View style={styles.rightColumn}>
-            <RadarCard snapshot={snapshot} dimensions={dimensions}/>
+            <RadarCard snapshot={snapshot} dimensions={dimensions} />
           </View>
         </View>
-
       </ScrollView>
     </View>
   );
@@ -256,7 +306,7 @@ function ReadinessCard({snapshot, dimensions, readinessDelta }) {
     <View style={styles.card}>
       <Text style={styles.cardTitle}>1. TODAY READINESS INDEX</Text>
       <Text style={styles.cardSubtitle}>
-        Subjective index based on your collected signals
+        Subjective global grade based on your check-in signals
       </Text>
 
       <View style={styles.readinessTop}>
@@ -380,7 +430,7 @@ function RadarCard({snapshot, dimensions}) {
       <View style={styles.radarHeaderText}>
         <Text style={styles.cardTitle}>2. SENSATION & REALITY</Text>
         <Text style={styles.cardSubtitle}>
-          A DashBoard to compare how you Feel and the Insights from Sensors.
+          A DashBoard to compare your Signals and the Insights from Sensors reel data.
         </Text>
       </View>
 
@@ -411,8 +461,8 @@ function RadarCard({snapshot, dimensions}) {
 
       <View style={styles.radarRow}>
         <View style={styles.legendSide}>
-          <Text style={styles.legendItem}>● Signals</Text>
-          <Text style={styles.legendItemWhite}>- - Sensors</Text>
+          <Text style={styles.legendItem}>● Signals from Check-in</Text>
+          <Text style={styles.legendItemWhite}>- - Reel Data Sensors</Text>
         </View>
 
         <RadarChart data={dimensions} />
@@ -1174,5 +1224,20 @@ const styles = StyleSheet.create({
         textAlign: "center",
         textTransform: "uppercase",
         marginTop: 4,
+      },
+      topButtonsRow: {
+        width: 170,
+        flexDirection: "row",
+        gap: 8,
+        marginRight: 10,
+      },
+      
+      smallTopButton: {
+        flex: 1,
+        height: 48,
+        borderRadius: 16,
+        backgroundColor: "#FF8500",
+        alignItems: "center",
+        justifyContent: "center",
       },
 });

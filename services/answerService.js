@@ -68,3 +68,23 @@ export async function getTodayAnswers() {
 
   return data || [];
 }
+
+export async function getAnswersByPseudoAndDate(pseudo, checkinDate) {
+  const { getCheckinByPseudoAndDate } = await import("./checkinService");
+
+  const checkin = await getCheckinByPseudoAndDate(pseudo, checkinDate);
+
+  console.log("GET ANSWERS PSEUDO DATE:", {
+    pseudo,
+    checkinDate,
+    checkin,
+  });
+
+  if (!checkin) return [];
+
+  const answers = await getAnswers(checkin.id);
+
+  console.log("ANSWERS FOUND:", answers);
+
+  return answers;
+}

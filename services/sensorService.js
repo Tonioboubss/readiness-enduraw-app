@@ -59,3 +59,16 @@ export async function getTodaySensorObservations() {
 
   return data;
 }
+
+export async function getSensorObservationsByDate(checkinDate) {
+  const { data, error } = await supabase
+    .from("sensor_observations")
+    .select("*")
+    .eq("observation_date", checkinDate);
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}

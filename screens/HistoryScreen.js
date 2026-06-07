@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,69 +8,103 @@ import {
   Dimensions,
 } from "react-native";
 import Svg, { Circle, Polyline, Line, Text as SvgText } from "react-native-svg";
+import { getBodyHistory } from "../services/historyService";
 
 const { width } = Dimensions.get("window");
 
-const bodyScore = 84;
-
-const historyData = {
-  "7D": {
-    labels: ["D-6", "D-5", "D-4", "D-3", "D-2", "D-1", "D"],
-    body: [62, 66, 71, 73, 78, 81, 84],
-    gap: [25, 22, 18, 15, 12, 9, 7],
-  },
-  "15D": {
-    labels: ["1", "3", "5", "7", "9", "11", "13", "15"],
-    body: [55, 59, 63, 66, 70, 75, 80, 84],
-    gap: [30, 27, 25, 21, 18, 14, 10, 7],
-  },
-  "30D": {
-    labels: ["1", "5", "10", "15", "20", "25", "30"],
-    body: [48, 52, 60, 65, 71, 78, 84],
-    gap: [35, 31, 27, 23, 18, 12, 7],
-  },
-};
-
-const correlations = [
-  { label: "Energy", icon: "⚡", j1: 0.82, j3: 0.71 },
-  { label: "Recovery", icon: "🌙", j1: 0.76, j3: 0.65 },
-  { label: "Mental", icon: "🧠", j1: 0.69, j3: 0.58 },
-  { label: "Physical", icon: "🏃", j1: 0.74, j3: 0.63 },
-  { label: "Confidence", icon: "🛡️", j1: 0.67, j3: 0.55 },
-  { label: "Ambition", icon: "⛰️", j1: 0.61, j3: 0.49 },
-];
-
-export default function History() {
+export default function History({ navigation, route, session }) {
   const [period, setPeriod] = useState("7D");
-  const data = historyData[period];
+  const [history, setHistory] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  return (
+  useEffect(() => {
+    async function loadHistory() {
+      try {
+        const pseudo = session?.pseudo || route?.params?.pseudo;
+  
+        const result = await getBodyHistory(30, pseudo);
+  
+        setHistory(result);
+      } catch (e) {
+        console.log("History loading error:", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadHistory();
+  }, [session?.pseudo, route?.params?.pseudo]);
+
+  const realLabels = history?.labels || [];
+  const realBody = history?.body || [];
+  const realGap = history?.gap || [];
+
+  const data = {
+    labels: realLabels.slice(-Number(period.replace("D", ""))),
+    body: realBody.slice(-Number(period.replace("D", ""))),
+    gap: realGap.slice(-Number(period.replace("D", ""))),
+  };
+
+  const canShowBodyAwareness = history?.hasEnoughForBodyAwareness;
+  const bodyScore = history?.latestBodyScore ?? null;  return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>BODY AWARENESS</Text>
+        
+      <View style={styles.header}>
+        <View style={styles.headerSide}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.navigate("DailyPrint", {
+                pseudo: session?.pseudo || route?.params?.pseudo,
+                checkinDate: session?.checkinDate || route?.params?.checkinDate,
+              })
+            }
+          >
+            <Text style={styles.headerIcon}>←</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.headerCenter}>
+          <Text style={styles.title}>
+            BODY <Text style={styles.awAccent}>AW</Text>ARENESS
+          </Text>
+
           <Text style={styles.subtitle}>
-            How well your feelings predict your physiology
+            How well your feelings predict your physiology ?
           </Text>
         </View>
+
+        <View style={styles.headerSide} />
+      </View>
 
         <View style={styles.mainLayout}>
           <View style={styles.leftColumn}>
             <View style={styles.scoreCard}>
               <Text style={styles.cardTitle}>1. BODY AWARENESS SCORE</Text>
-              <Text style={styles.cardSubtitle}>Predictive self-awareness</Text>
+              <Text style={styles.cardSubtitle}>Predictive self shape awareness :
+              Your recent feelings are being compared with sensor data from the following days. </Text>
 
               <View style={styles.scoreRow}>
-                <AwarenessGauge value={bodyScore} />
+                {canShowBodyAwareness && bodyScore != null ? (
+                  <AwarenessGauge value={bodyScore} />
+                ) : (
+                  <View style={styles.placeholderGauge}>
+                    <Text style={styles.placeholderText}>—</Text>
+                    <Text style={styles.placeholderSub}>Need 3 days</Text>
+                  </View>
+                )}
 
                 <View style={styles.scoreTextBlock}>
-                  <Text style={styles.scoreStatus}>EXCELLENT</Text>
-                  <Text style={styles.bodyText}>
-                    Your internal signals are strongly aligned with your body
-                    data.
-                  </Text>
-                  <Text style={styles.bigGreen}>↗ +8</Text>
-                  <Text style={styles.mutedText}>vs last week</Text>
+
+                <Text style={styles.bigGreen}>
+                  {canShowBodyAwareness
+                    ? "3-DAY WINDOW"
+                    : "3 CHECK-IN DAYS REQUIRED"}
+                </Text>
+
+                <Text style={styles.mutedText}>
+                  Perception D-2 vs Sensors Data from D-1 & D-Day !
+                </Text>
                 </View>
               </View>
             </View>
@@ -114,28 +148,39 @@ export default function History() {
               />
 
               <View style={styles.legend}>
-                <Text style={styles.legendGreen}>● Body Score</Text>
-                <Text style={styles.legendOrange}>● Mean Gap</Text>
+                <Text style={styles.legendGreen}>● Body Awareness</Text>
+                <Text style={styles.legendOrange}>● Mean Perception Gap</Text>
               </View>
             </View>
           </View>
 
           <View style={styles.rightColumn}>
             <View style={styles.correlationCard}>
-              <Text style={styles.cardTitle}>4. BODY AWARENESS AXES</Text>
+              <Text style={styles.cardTitle}>2. BODY AWARENESS AXES</Text>
               <Text style={styles.cardSubtitle}>
-                Feeling prediction power at J+1 and J+3
+                Indexes regarding D-1 and Today
               </Text>
 
               <View style={styles.tableHeader}>
                 <Text style={styles.tableHeaderDimension}>Axis</Text>
-                <Text style={styles.tableHeaderValue}>J+1</Text>
-                <Text style={styles.tableHeaderValue}>J+3</Text>
+                <Text style={styles.tableHeaderValue}>D-1</Text>
+                <Text style={styles.tableHeaderValue}>Today</Text>
               </View>
 
-              {correlations.map((item) => (
-                <CorrelationRow key={item.label} item={item} />
-              ))}
+              {history?.hasEnoughForBodyAwareness &&
+              (history?.correlations || []).length > 0 ? (
+                (history?.correlations || []).map((item) => (
+                  <CorrelationRow key={item.label} item={item} />
+                ))
+              ) : (
+                <View style={styles.readingBox}>
+                  <Text style={styles.readingTitle}>BUILDING BASELINE</Text>
+                  <Text style={styles.readingText}>
+                    Body Awareness needs 3 completed snapshots to compare perception D-2 with
+                    sensors D-1 and D-Day.
+                  </Text>
+                </View>
+              )}
 
               <View style={styles.readingBox}>
                 <Text style={styles.readingTitle}>HOW TO READ</Text>
@@ -147,6 +192,16 @@ export default function History() {
             </View>
           </View>
         </View>
+
+        <TouchableOpacity
+          style={styles.homeFooterButton}
+          onPress={() => navigation.navigate("Home")}
+        >
+          <Text style={styles.homeFooterText}>
+            Return Home
+          </Text>
+        </TouchableOpacity>
+
       </ScrollView>
     </View>
   );
@@ -204,6 +259,16 @@ function MiniLineChart({ labels, body, gap }) {
         const paddingX = 20;
         const paddingY = 18;
       
+        if (!body?.length || !gap?.length || !labels?.length) {
+          return (
+            <View style={styles.chartBox}>
+              <Text style={styles.emptyChartText}>
+                No history yet. Complete your first daily snapshots.
+              </Text>
+            </View>
+          );
+        }
+      
         const maxLabels = labels.length;
         const step = maxLabels > 7 ? Math.ceil(maxLabels / 6) : 1;
       
@@ -220,24 +285,32 @@ function MiniLineChart({ labels, body, gap }) {
           return { x, y };
         };
       
-        const bodyPoints = body.map((v, i) => mapPoint(v, i, body));
-        const gapPoints = gap.map((v, i) => mapPoint(v, i, gap));
+        const cleanBody = body;
+        const cleanGap = gap;;
+
+        const bodyPoints = cleanBody.map((v, i) =>
+          v == null ? null : mapPoint(v, i, cleanBody)
+        );
+
+        const gapPoints = cleanGap.map((v, i) =>
+          v == null ? null : mapPoint(v, i, cleanGap)
+        );
       
         const pointsToString = (points) =>
-          points.map((p) => `${p.x},${p.y}`).join(" ");
+        points.filter(Boolean).map((p) => `${p.x},${p.y}`).join(" ");
       
         return (
           <View style={styles.chartBox}>
             <Svg width="100%" height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`}>
-              {[0, 25, 50, 75, 100].map((level) => {
-                const y =
-                  chartHeight -
-                  paddingY -
-                  (level / 100) * (chartHeight - paddingY * 2);
-      
-                return (
+            {[0, 25, 50, 75, 100].map((level) => {
+              const y =
+                chartHeight -
+                paddingY -
+                (level / 100) * (chartHeight - paddingY * 2);
+
+              return (
+                <React.Fragment key={level}>
                   <Line
-                    key={level}
                     x1={paddingX}
                     y1={y}
                     x2={chartWidth - paddingX}
@@ -245,26 +318,55 @@ function MiniLineChart({ labels, body, gap }) {
                     stroke="#223244"
                     strokeWidth="1"
                   />
-                );
-              })}
+
+                  <SvgText
+                    x={8}
+                    y={y + 3}
+                    fill="#94a3b8"
+                    fontSize="8"
+                    textAnchor="start"
+                  >
+                    {level}
+                  </SvgText>
+                </React.Fragment>
+              );
+            })}
       
+            {bodyPoints.filter(Boolean).length > 1 && (
               <Polyline
-                points={pointsToString(bodyPoints)}
+                points={pointsToString(bodyPoints.filter(Boolean))}
                 fill="none"
                 stroke="#91d94f"
                 strokeWidth="3"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
+            )}
+
+            {bodyPoints.map((p, index) => {
+              if (!p) return null;
+
+              return (
+                <Circle
+                  key={`body-point-${index}`}
+                  cx={p.x}
+                  cy={p.y}
+                  r="4"
+                  fill="#91d94f"
+                />
+              );
+            })}
       
-              <Polyline
-                points={pointsToString(gapPoints)}
-                fill="none"
-                stroke="#ff8500"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+          {gapPoints.filter(Boolean).length > 1 && (
+            <Polyline
+              points={pointsToString(gapPoints.filter(Boolean))}
+              fill="none"
+              stroke="#ff8500"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
       
               {labels.map((label, index) => {
                 const shouldShow =
@@ -305,15 +407,17 @@ function CorrelationRow({ item }) {
         <Text style={styles.dimensionLabel}>{item.label}</Text>
       </View>
 
-      <Text style={styles.correlationValue}>{item.j1.toFixed(2)}</Text>
+      <Text style={styles.correlationValue}>
+        {item.j1 == null ? "—" : item.j1.toFixed(2)}
+      </Text>
 
       <Text
         style={[
           styles.correlationValue,
-          item.j3 < 0.6 ? styles.orange : styles.green,
+          item.j3 != null && item.j3 < 0.6 ? styles.orange : styles.green
         ]}
       >
-        {item.j3.toFixed(2)}
+        {item.j3 == null ? "—" : item.j3.toFixed(2)}
       </Text>
     </View>
   );
@@ -330,8 +434,31 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
 
-  header: {
-    marginBottom: 12,
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  
+  homeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  
+  headerIcon: {
+    color: "#ffffff",
+    fontSize: 22,
+    fontWeight: "700",
   },
 
   title: {
@@ -609,6 +736,85 @@ const styles = StyleSheet.create({
   },
 
   orange: {
+    color: "#ff8500",
+  },
+  placeholderGauge: {
+    width: 118,
+    height: 118,
+    borderRadius: 59,
+    borderWidth: 2,
+    borderColor: "#243447",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.025)",
+  },
+  
+  placeholderText: {
+    color: "#ffffff",
+    fontSize: 34,
+    fontWeight: "900",
+  },
+  
+  placeholderSub: {
+    color: "#94a3b8",
+    fontSize: 10,
+    marginTop: 2,
+  },
+  emptyChartText: {
+    color: "#94a3b8",
+    fontSize: 11,
+    textAlign: "center",
+  },
+  awAccent: {
+    color: "#ff8500",
+  },
+  homeFooterButton: {
+    marginTop: 18,
+    alignSelf: "center",
+    backgroundColor: "#ff8500",
+    paddingHorizontal: 36,
+    paddingVertical: 14,
+    borderRadius: 14,
+  },
+  
+  homeFooterText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  
+  headerSide: {
+    width: 50,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  
+  backButton: {
+    width: 36,
+    height: 36,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  
+  headerIcon: {
+    color: "#ffffff",
+    fontSize: 26,
+    fontWeight: "700",
+  },
+  
+  awAccent: {
     color: "#ff8500",
   },
 });

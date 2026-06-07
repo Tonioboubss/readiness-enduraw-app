@@ -16,9 +16,9 @@ import Svg, {
 
 import { COLORS, RADIUS } from "../constants/theme";
 import ProgressSteps from "../components/ProgressSteps";
-import { getTodayAnswers } from "../services/answerService";
+import { getAnswersByPseudoAndDate } from "../services/answerService";
 
-export default function CheckInScreen1({ navigation, route }) {
+export default function CheckInScreen1({ navigation, route, session }) {
   const readOnly = route?.params?.readOnly === true;
 
   const [energy, setEnergy] = useState(route?.params?.checkin1Values?.energy ?? null);
@@ -47,7 +47,10 @@ export default function CheckInScreen1({ navigation, route }) {
 
   const loadReadonlyAnswers = async () => {
     try {
-      const savedAnswers = await getTodayAnswers();
+      const savedAnswers = await getAnswersByPseudoAndDate(
+        session?.pseudo || route?.params?.pseudo,
+        session?.checkinDate || route?.params?.checkinDate
+      );
 
       const getValue = (key, fallback) => {
         const answer = savedAnswers.find((item) => item.signal_key === key);
@@ -95,6 +98,8 @@ export default function CheckInScreen1({ navigation, route }) {
         confidence,
       },
       checkin2Values,
+      pseudo: session?.pseudo,
+      checkinDate: session?.checkinDate,
       checkin1Answers: [
         {
           signal_key: "energy",
@@ -136,6 +141,18 @@ export default function CheckInScreen1({ navigation, route }) {
         </Pressable>
 
         <Text style={styles.header}>MORNING CHECK-IN</Text>
+        {session && (
+          <Text
+            style={{
+              color: "#94a3b8",
+              fontSize: 11,
+              textAlign: "center",
+              marginTop: 4,
+            }}
+          >
+            {session.pseudo} • {session.checkinDate}
+          </Text>
+        )}
 
         <View style={{ width: 34 }} />
       </View>

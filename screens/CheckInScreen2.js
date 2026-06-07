@@ -11,9 +11,9 @@ import {
 import SignalCard from "../components/SignalCard";
 import { submitDailyCheckin } from "../services/dailyworkflowService";
 import ProgressSteps from "../components/ProgressSteps";
-import { getTodayAnswers } from "../services/answerService";
+import { getAnswersByPseudoAndDate } from "../services/answerService";
 
-export default function CheckInScreen2({ navigation, route }) {
+export default function CheckInScreen2({ navigation, route, session }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const checkin1Answers = route?.params?.checkin1Answers || [];
   const readOnly = route?.params?.readOnly === true;
@@ -94,7 +94,7 @@ export default function CheckInScreen2({ navigation, route }) {
       number: 6,
       key: "nervousSystemState",
       title: "Nervous\nSystem State",
-      question: "How tense are you ?",
+      question: "How your nerves feel ?",
       leftLabel: "Tense",
       rightLabel: "Calm",
       icon: "zap",
@@ -103,7 +103,7 @@ export default function CheckInScreen2({ navigation, route }) {
       number: 7,
       key: "motorFluency",
       title: "Action\nCapacity",
-      question: "How easy is it to undertake ?",
+      question: "How easy is it to undertake today?",
       leftLabel: "Friction",
       rightLabel: "Fluid",
       icon: "crosshair",
@@ -130,7 +130,7 @@ export default function CheckInScreen2({ navigation, route }) {
       number: 10,
       key: "competitiveDrive",
       title: "Competitive\nDrive",
-      question: "How much you want to achieve next aim ?",
+      question: "How much you want to achieve next Goal ?",
       leftLabel: "Lassitude",
       rightLabel: "Hungry",
       icon: "zap",
@@ -149,7 +149,7 @@ export default function CheckInScreen2({ navigation, route }) {
       number: 12,
       key: "hormonalBalance",
       title: "Hormonal\nFeeling",
-      question: "How stable do your hormonal sensations feel?",
+      question: "How hormonal sensations affect your global State?",
       leftLabel: "Unstable",
       rightLabel: "Balanced",
       icon: "circle",
@@ -158,8 +158,13 @@ export default function CheckInScreen2({ navigation, route }) {
   ];
 
   const handleContinue = async () => {
+    const pseudo = session?.pseudo || route?.params?.pseudo;
+    const checkinDate = session?.checkinDate || route?.params?.checkinDate;
     if (readOnly) {
-      navigation.navigate("DailyPrint");
+      navigation.navigate("DailyPrint", {
+        pseudo,
+        checkinDate,
+      });
       return;
     }
     try {
@@ -247,10 +252,16 @@ export default function CheckInScreen2({ navigation, route }) {
   
       const allAnswers = [...checkin1Answers, ...checkin2Answers];
   
-      const result = await submitDailyCheckin(allAnswers);
+      const result = await submitDailyCheckin(allAnswers, {
+        pseudo: session?.pseudo || route?.params?.pseudo,
+        checkinDate: session?.checkinDate || route?.params?.checkinDate,
+      });
+
       navigation.navigate("DailyPrint", {
         checkinId: result.checkin.id,
         snapshot: result.snapshot.snapshot_json,
+        pseudo,
+        checkinDate,
       });
 
     } catch (error) {
@@ -277,7 +288,10 @@ export default function CheckInScreen2({ navigation, route }) {
   
   const loadReadonlyAnswers = async () => {
     try {
-      const savedAnswers = await getTodayAnswers();
+      const savedAnswers = await getAnswersByPseudoAndDate(
+        session?.pseudo || route?.params?.pseudo,
+        session?.checkinDate || route?.params?.checkinDate
+      );
   
       const map = {
         wake_quality: "wakeUpQuality",
@@ -320,6 +334,8 @@ export default function CheckInScreen2({ navigation, route }) {
             readOnly, // reste dans le même flux
             checkin1Values,
             checkin2Values: answers,
+            pseudo: session?.pseudo || route?.params?.pseudo,
+            checkinDate: session?.checkinDate || route?.params?.checkinDate,
           })}
       >
         <Text style={styles.back}>←</Text>
